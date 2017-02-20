@@ -6,3 +6,4 @@ netaddr
 requests
 protobuf==2.6.1
 #above requirements are for web interface only - also need scapy for sniffing
+scapy
