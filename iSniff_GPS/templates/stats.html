@@ -16,9 +16,9 @@ var data = {
 function initialize() {
 
 {
-  var bluffGraph = new Bluff.Pie('bluffExample', 900);
+  var bluffGraph = new Bluff.Bar('barchart-manufacturer', 900);
   bluffGraph.theme_keynote();
-  //bluffGraph.title = 'Top 10 Manufacturers';
+  bluffGraph.title = 'Top 10 Manufacturers';
 
   for (i in data.items) 
   {
@@ -34,8 +34,8 @@ function initialize() {
 {% endblock %}
 
 {% block content %}
-<h2>Top 10 manufacturers</h2>
-<h3>Total: {{devicecount}}</h3>
-<canvas id="bluffExample"></canvas>
+<h2>Top 10 Device Manufacturers</h2>
+<h3>Total Devices: {{devicecount}}</h3>
+<canvas id="barchart-manufacturer"></canvas>
 
 {% endblock %}
