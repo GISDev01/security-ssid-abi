@@ -2,34 +2,37 @@
 {% load dict_lookup %}
 
 {% block head %}
-<script>
-function initialize() {}
-</script>
+    <script>
+        function initialize() {
+        }
+    </script>
 {% endblock %}
 
 {% block content %}
-    <h2>{{ devicecount }} devices probing for {{ apcount }} networks detected</h2>
-	<table class="zebra">
-	<thead>
-	<tr>
-		<th width="10%">MAC | Name</th>
-		<th width="8%">Manufacturer</th>
-		<th>Probed for</th>
-		<th width="15%">Last detected</th>
-	</tr>
-	</thead>
+
+    <h2>{{ devicecount }} devices probing for {{ apcount }} networks detected (Client List)</h2>
+    <table class="zebra">
+        <thead>
+        <tr>
+            <th width="10%">MAC | Name</th>
+            <th width="8%">Manufacturer</th>
+            <th>Probed for</th>
+            <th width="15%">Last detected</th>
+        </tr>
+        </thead>
         {% for c in object_list %}
-	<tr class="{% cycle '' 'alt' %}">
-		<td><a href="{% url "client" c.mac %}">{{ c.mac }}</a>{% if c.name %}<br>{{c.name}}{%endif%}</td>
-		<td>{{ c.manufacturer }}</td>
-		<td>{% for ap in probedict|key:c %}
-                {{ap|safe}}{% if probedict|key:c|length > 1 and forloop.last == False%};{%endif%}
-                &nbsp;
-            {% endfor %}
-        </td>
-		<td>{{ c.lastseen_date }}</td> 
-	</tr>
+            <tr class="{% cycle '' 'alt' %}">
+                <td><a href="{% url "client" c.mac %}">{{ c.mac }}</a>{% if c.name %}<br>{{ c.name }}{% endif %}</td>
+                <td>{{ c.manufacturer }}</td>
+                <td>{% for ap in probedict|key:c %}
+                    {{ ap|safe }}{% if probedict|key:c|length > 1 and forloop.last == False %};{% endif %}
+                    &nbsp;
+                {% endfor %}
+                </td>
+                <td>{{ c.lastseen_date }}</td>
+            </tr>
         {% endfor %}
-	</table>
+    </table>
     </ul>
+
 {% endblock %}
