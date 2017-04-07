@@ -1,9 +1,7 @@
 # Wigle settings
 
-wigle_username = 'Bugmenot'
-wigle_password = 'hello'
-
-# Django settings for iSniff_GPS project.
+wigle_username = ''
+wigle_password = ''
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG

@@ -1,13 +1,12 @@
-from wigle import Wigle
+import wigle_lib
 
-import settings
+wigle_apiname = ''
+wigle_apitoken = ''
 
 
-# parse lat/lon from hrefs in results page like
-# <a href="/gps/gps/Map/onlinemap2/?maplat=39.89233017&maplon=-86.15497589&mapzoom=17&ssid=NETGEAR&netid=00:00:85:E7:0C:01">Get Map</a>
 def getLocation(BSSID='', SSID=''):
-    wigle = Wigle(settings.wigle_username, settings.wigle_password)
-    results = wigle.search(ssid=SSID)
+    wigle = wigle_lib.WigleSearch(wigle_apiname, wigle_apitoken)
+    results = wigle.search(ssidlike=SSID)
     apdict = {}
     count = 1
     for result in results:
@@ -19,4 +18,5 @@ def getLocation(BSSID='', SSID=''):
             id = '%s [%s] [%s]' % (SSID, bssid_result, count)
             apdict[id] = (lat, lon)
             count += 1
+    print apdict
     return apdict
