@@ -1,10 +1,11 @@
-import wigle_lib
+import settings
+from security_ssid import wigle_lib
 
-wigle_apiname = ''
-wigle_apitoken = ''
+wigle_apiname = settings.wigle_username
+wigle_apitoken = settings.wigle_username
 
 
-def getLocation(BSSID='', SSID=''):
+def get_location(BSSID='', SSID=''):
     wigle = wigle_lib.WigleSearch(wigle_apiname, wigle_apitoken)
     results = wigle.search(ssidlike=SSID)
     apdict = {}
@@ -18,5 +19,4 @@ def getLocation(BSSID='', SSID=''):
             id = '%s [%s] [%s]' % (SSID, bssid_result, count)
             apdict[id] = (lat, lon)
             count += 1
-    print apdict
     return apdict
