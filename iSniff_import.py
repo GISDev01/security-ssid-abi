@@ -1,7 +1,5 @@
 import argparse
 import binascii
-from collections import defaultdict
-from datetime import datetime  # for utcfromtimestamp
 
 import django
 from django.core.exceptions import *
@@ -40,14 +38,14 @@ def get_manuf(m):
     return ascii_printable(manuf)
 
 
-def CreateOrUpdateClient(mac, utc, name=None):
+def create_or_update_client(mac_addr, utc, name=None):
     try:
-        c = Client.objects.get(mac=mac)
+        c = Client.objects.get(mac=mac_addr)
         if c.lastseen_date < utc:
             c.lastseen_date = utc
             # print 'Updated time on object %s' % mac
     except ObjectDoesNotExist:
-        c = Client(mac=mac, lastseen_date=utc, manufacturer=get_manuf(mac))
+        c = Client(mac=mac_addr, lastseen_date=utc, manufacturer=get_manuf(mac_addr))
     # print 'Created new object %s' % mac
     if name:
         c.name = name
@@ -71,11 +69,14 @@ def UpdateDB(clientmac=None, time=None, SSID='', BSSID=''):
     if a.lastprobed_date and a.lastprobed_date < utc:
         a.lastprobed_date = utc
     a.save()  # avoid ValueError: 'AP' instance needs to have a primary key value before a many-to-many relationship can be used.
-    a.client.add(CreateOrUpdateClient(clientmac, utc))
+    a.client.add(create_or_update_client(clientmac, utc))
     a.save()
 
 
-def process(p):
+def process_packet(pkt):
+    # TODO: Refactor this to send every packet to a queue in order to process in a distributed fashion
+    # New iteration of processing will need to catalogue every packet from certain MAC Addresses,
+    # which are defined in a singular RDS Postgres table
     global total_pkt_count
     total_pkt_count += 1
 
@@ -84,9 +85,13 @@ def process(p):
         print 'Total Packet Count thus far: ' + str(total_pkt_count)
         print str(datetime.now())
 
-    if p.haslayer(ARP):
-        arp = p.getlayer(ARP)
-        dot11 = p.getlayer(Dot11)
+    # print pkt.summary()
+    # print pkt.getlayer(Dot11).addr2
+
+    if pkt.haslayer(ARP):
+        print '----ARP packet'
+        arp = pkt.getlayer(ARP)
+        dot11 = pkt.getlayer(Dot11)
         mode = ''
         try:
             target_bssid = dot11.addr1  # on wifi, BSSID (mac) of AP currently connected to
@@ -96,59 +101,70 @@ def process(p):
                 print ('%s [%s] ' + great_success('ARP') + ' who has %s? tell %s -> %s [%s] on BSSID %s') % \
                       (get_manuf(source_mac), source_mac, arp.pdst, arp.psrc, get_manuf(target_mac), target_mac,
                        target_bssid)
-                UpdateDB(clientmac=source_mac, time=p.time, BSSID=target_mac)
+                UpdateDB(clientmac=source_mac, time=pkt.time, BSSID=target_mac)
                 # code.interact(local=locals())
+            else:
+                print 'Skipping ARP packet'
 
         except:
             try:
-                if p.haslayer(Ether):
-                    source_mac = p.getlayer(
+                if pkt.haslayer(Ether):
+                    source_mac = pkt.getlayer(
                         Ether).src  # wifi client mac when sniffing a tap interface (e.g. at0 provided by airbase-ng)
-                    target_mac = p.getlayer(
+                    target_mac = pkt.getlayer(
                         Ether).dst  # we won't get any 802.11/SSID probes but the bssid disclosure will be in the ethernet dest
                     if target_mac != 'ff:ff:ff:ff:ff:ff' and arp.op == 1:
                         print ('%s [%s] ' + great_success('ARP') + ' who has %s? tell %s -> %s [%s] (Ether)') % \
                               (get_manuf(source_mac), source_mac, arp.pdst, arp.psrc, get_manuf(target_mac), target_mac)
-                        UpdateDB(clientmac=source_mac, time=p.time, BSSID=target_mac)
+                        UpdateDB(clientmac=source_mac, time=pkt.time, BSSID=target_mac)
+                else:
+                    print 'Skipping Ether packet'
             except IndexError:
                 pass
 
-    elif p.haslayer(Dot11ProbeReq):
-        mac = p.getlayer(Dot11).addr2
-        for p in p:
-            if p.haslayer(Dot11Elt) and p.info:
+    elif pkt.haslayer(Dot11ProbeReq):
+        print '----Dot11 Probe Req found'
+        mac = pkt.getlayer(Dot11).addr2
+        for pkt in pkt:
+            if pkt.haslayer(Dot11Elt) and pkt.info:
                 try:
-                    probed_ssid = p.info.decode('utf8')
+                    probed_ssid = pkt.info.decode('utf8')
                 except UnicodeDecodeError:
-                    probed_ssid = 'HEX:%s' % binascii.hexlify(p.info)
+                    probed_ssid = 'HEX:%s' % binascii.hexlify(pkt.info)
                     print '%s [%s] probed for non-UTF8 SSID (%s bytes, converted to "%s")' % (
-                        get_manuf(mac), mac, len(p.info), probed_ssid)
+                        get_manuf(mac), mac, len(pkt.info), probed_ssid)
                 if len(probed_ssid) > 0 and probed_ssid not in client[mac]:
                     client[mac].append(probed_ssid)
-                    UpdateDB(clientmac=mac, time=p.time, SSID=probed_ssid)  # unicode goes in DB for browser display
+                    UpdateDB(clientmac=mac, time=pkt.time, SSID=probed_ssid)  # unicode goes in DB for browser display
                     return "%s [%s] probe for %s" % (
                         get_manuf(mac), mac, ascii_printable(probed_ssid))  # ascii only for console print
 
-    elif p.haslayer(Dot11AssoReq) or p.haslayer(Dot11AssoResp) or p.haslayer(Dot11ReassoReq) or p.haslayer(
+    elif pkt.haslayer(Dot11AssoReq) or pkt.haslayer(Dot11AssoResp) or pkt.haslayer(Dot11ReassoReq) or pkt.haslayer(
             Dot11ReassoResp):
-        pass
-    # print p.summary()
-    # print p.fields
+        #pass
+        print '----Packet with Asso Req:'
+        print pkt.summary()
+        print pkt.fields
 
-    if p.haslayer(Dot11) and p.haslayer(UDP) and p.dst == '224.0.0.251':
-        for p in p:  # only parse MDNS names for 802.11 layer sniffing for now, easy to see what's a request from a client
-            if p.dport == 5353:
+    if pkt.haslayer(Dot11) and pkt.haslayer(UDP) and pkt.dst == '224.0.0.251':
+        print '----Packet with Dot11 and UDP and Apple mDNS:'
+        print pkt.summary()
+
+        # only parse MDNS names for 802.11 layer sniffing for now, easy to see what's a request from a client
+        for pkt in pkt:
+            if pkt.dport == 5353:
+                print 'Packet destination port 5353'
                 try:
-                    d = DNSRecord.parse(p['Raw.load'])
+                    d = DNSRecord.parse(pkt['Raw.load'])
                     for q in d.questions:
                         if q.qtype == 255 and '_tcp.local' not in str(q.qname):
                             try:
-                                src = p.getlayer('Dot11').addr3
+                                src = pkt.getlayer('Dot11').addr3
                                 name = str(q.qname).strip('.local')
                                 print great_success('%s is %s') % (src, name)
                                 # code.interact(local=locals())
                                 if src != '01:00:5e:00:00:fb':
-                                    CreateOrUpdateClient(src, datetime.utcfromtimestamp(p.time), name)
+                                    create_or_update_client(src, datetime.utcfromtimestamp(pkt.time), name)
                             except AttributeError:
                                 print warning('Error parsing MDNS')
                 except IndexError:
@@ -156,11 +172,11 @@ def process(p):
 
 
 if args.pcap:
-    print 'Reading %s...' % args.pcap
-    sniff(offline=args.pcap, prn=lambda x: process(x), store=0)
+    print 'Reading PCAP file %s...' % args.pcap
+    sniff(offline=args.pcap, prn=lambda x: process_packet(x), store=0)
 else:
-    print 'Sniffing %s...' % args.interface
-    sniff(iface=args.interface, prn=lambda x: process(x), store=0)
+    print 'Realtime Sniffing on interface %s...' % args.interface
+    sniff(iface=args.interface, prn=lambda x: process_packet(x), store=0)
 
 print
 print 'Summary'
@@ -169,5 +185,3 @@ print
 
 for mac in client:
     print '%s [%s] probed for %s' % (get_manuf(mac), mac, ', '.join(map(ascii_printable, client[mac])))
-
-# print json.dumps(client)
