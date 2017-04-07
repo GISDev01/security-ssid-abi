@@ -1,7 +1,6 @@
 security_ssid/settings.py
 .idea/
 color.pyc
-iSniff_GPS.sqlite3
 security_ssid/BSSIDApple_pb2.pyc
 security_ssid/GSM_pb2.pyc
 security_ssid/__init__.pyc
@@ -17,3 +16,4 @@ security_ssid/wigle_api.pyc
 security_ssid/wloc.pyc
 security_ssid/wsgi.pyc
 wigle_lib.pyc
+/monitor_results.sqlite3
