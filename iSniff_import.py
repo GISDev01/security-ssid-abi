@@ -1,22 +1,21 @@
 import argparse
 import binascii
+import logging
 
 import django
 from django.core.exceptions import *
+
 # for mdns/bonjour name parsing
 from dnslib import DNSRecord
 from netaddr import EUI
+
 from scapy.all import *
 
 from color import *
-from iSniff_GPS.models import Client, AP
-
-import logging
-
-import wigle_lib
+from security_ssid.models import Client, AP
 
 django.setup()
-parser = argparse.ArgumentParser(description='iSniff GPS Server')
+parser = argparse.ArgumentParser(description='WiFi Passive Sniff Server')
 parser.add_argument('-r', dest='pcap', action='store', help='pcap file to read')
 parser.add_argument('-i', dest='interface', action='store', default='mon0', help='interface to sniff (default mon0)')
 args = parser.parse_args()
@@ -29,7 +28,6 @@ total_pkt_count = 0
 
 client = defaultdict(list)
 interface = "mon0"
-
 
 
 def ascii_printable(s):

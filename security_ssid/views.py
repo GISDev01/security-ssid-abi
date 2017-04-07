@@ -8,7 +8,7 @@ from django.shortcuts import render
 from django.views.generic import *
 from netaddr import EUI
 
-import wigle_api
+import wigle_query
 import wloc
 from models import *
 
@@ -215,7 +215,7 @@ def AppleMobile(request, cellid=None, LTE=False):
 
 def locateSSID(request, ssid=None):
     if ssid:
-        apdict = wigle_api.getLocation(SSID=ssid)
+        apdict = wigle_query.get_location(SSID=ssid)
         numresults = len(apdict)
         if numresults == 0:
             return HttpResponse('0 results.')

@@ -16,7 +16,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'iSniff_GPS.sqlite3',  # 'isniff_gps',                      # Or path to database file if using sqlite3.
+        'NAME': 'iSniff_GPS.sqlite3',  # 'isniff_gps', # Or path to database file if using sqlite3.
         'USER': '',  # Not used with sqlite3.
         'PASSWORD': '',  # Not used with sqlite3.
         'HOST': '',  # Set to empty string for localhost. Not used with sqlite3.
@@ -63,7 +63,7 @@ MEDIA_URL = ''
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/home/media/media.lawrence.com/static/"
-STATIC_ROOT = '/home/isniff/iSniff_GPS/static'
+STATIC_ROOT = '/home/isniff/security_ssid/static'
 
 # URL prefix for static files.
 # Example: "http://media.lawrence.com/static/"
@@ -104,10 +104,10 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'iSniff_GPS.urls'
+ROOT_URLCONF = 'security_ssid.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'iSniff_GPS.wsgi.application'
+WSGI_APPLICATION = 'security_ssid.wsgi.application'
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -118,7 +118,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     # Uncomment the next line to enable the admin:
     'django.contrib.admin',
-    'iSniff_GPS'
+    'security_ssid'
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
 )

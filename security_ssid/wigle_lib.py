@@ -2,6 +2,7 @@ import requests
 
 WIGLE_ENDPOINT_API_V2 = 'https://api.wigle.net/api/v2/network/search'
 
+
 class WigleSearch():
     def __init__(self, user, password):
         self.user = user
@@ -73,7 +74,7 @@ class WigleSearch():
 
             params['first'] = data['last'] + 1
 
-        print result_wifi
+        # print result_wifi
         return result_wifi
 
 
@@ -83,8 +84,9 @@ def fix_latlong_nums(net):
 
 
 def raise_wigle_error(data):
-    message = data.get('message')
-    if message == "too many queries":
+    # {u'error': u'too many queries today', u'success': False}
+    message = data.get('error')
+    if message == "too many queries today":
         raise WigleRatelimitExceeded()
     else:
         raise WigleRequestFailure(message)
@@ -100,4 +102,3 @@ class WigleRequestFailure(WigleError):
 
 class WigleRatelimitExceeded(WigleRequestFailure):
     pass
-
