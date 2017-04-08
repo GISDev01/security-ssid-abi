@@ -1,7 +1,18 @@
-from influxdb import InfluxDBClient
+import time
 
-db_name = 'securityssid'
+from db import influxdb_client
 
-influx_client = InfluxDBClient('192.99.1.26', 8086, database=db_name)
-influx_client.create_database(db_name)
 
+def assemble_json(measurement, value, timestamp, tags):
+    return {
+        "measurement": measurement,
+        "tags": tags,
+        "time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.localtime(int(timestamp))),
+        "fields": {
+            "value": value
+        }
+    }
+
+
+def write_data(data_points):
+    influxdb_client.write_points(data_points)
