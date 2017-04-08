@@ -1,21 +1,48 @@
-from influxdb import InfluxDBClient
+from db.influx import influxdb_client
 
-json_body = [
+mobile_measurement_name = 'mobiledevices'
+access_pts_measurement_name = 'accesspoints'
+
+
+mobile_test_data_json = [
     {
-        "measurement": "test_measurement",
+        "measurement": mobile_measurement_name,
         "tags": {
-            "host": "server01",
-            "region": "us-west"
+            "macaddress": "01:ab:03:cd",
+            "sensor": "001",
+            "location": "001"
         },
-        "time": "2009-11-10T23:00:00Z",
         "fields": {
-            "value": 0.64
+            "value": -55
         }
     }
 ]
+influxdb_client.write_points(mobile_test_data_json)
 
-client = InfluxDBClient(host='192.99.1.26', port=8086, database='test_py_client')
-client.create_database('test_py_client')
-client.write_points(json_body)
-result = client.query('select value from test_measurement;')
-print("Result: {0}".format(result))
+# Yes, SQLi vuln introduced with string concatenation temporarily
+result = influxdb_client.query('select * from ' + mobile_measurement_name + ';')
+
+print("Mobile Result: {0}".format(result))
+
+
+ap_test_data_json = [
+    {
+        "measurement": access_pts_measurement_name,
+        "tags": {
+            "macaddress": "04:ef:06:gh",
+            "sensor": "001",
+            "location": "001"
+        },
+        "fields": {
+            "value": -56
+        }
+    }
+]
+influxdb_client.write_points(ap_test_data_json)
+
+# Yes, SQLi vuln introduced with string concatenation temporarily
+result = influxdb_client.query('select * from ' + access_pts_measurement_name + ';')
+
+print("Access Points Result: {0}".format(result))
+
+

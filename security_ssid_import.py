@@ -11,7 +11,7 @@ from scapy.all import *
 from color import *
 from security_ssid.models import Client, AP
 
-from db.influx import influx_client
+from db.influx import influxdb_client
 
 django.setup()
 parser = argparse.ArgumentParser(description='WiFi Passive Sniff Server')

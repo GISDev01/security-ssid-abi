@@ -1,9 +1,9 @@
-INFLUX_HOST = '192.99.1.126'
+INFLUX_HOST = '192.99.1.26'
 INFLUX_PORT = '8086'
 INFLUX_USER = ''
 INFLUX_PASSWORD = ''
 INFLUX_DB = 'securityssid'
-INFLUX_TIMEOUT_SEC = '5'
+INFLUX_TIMEOUT_SEC = 5.0
 
 wigle_username = ''
 wigle_password = ''
