@@ -1,18 +1,17 @@
 import argparse
 import binascii
-import logging
 
 import django
 from django.core.exceptions import *
-
 # for mdns/bonjour name parsing
 from dnslib import DNSRecord
 from netaddr import EUI
-
 from scapy.all import *
 
 from color import *
 from security_ssid.models import Client, AP
+
+from db.influx import influx_client
 
 django.setup()
 parser = argparse.ArgumentParser(description='WiFi Passive Sniff Server')
@@ -38,9 +37,9 @@ def get_manuf(m):
     try:
         mac = EUI(m)
         manuf = mac.oui.records[0]['org'].split(' ')[0].replace(',', '')
-    # .replace(', Inc','').replace(' Inc.','')
     except:
         manuf = 'unknown'
+    # logger.debug('Manufacturer: %s', ascii_printable(manuf))
     return ascii_printable(manuf)
 
 
@@ -205,7 +204,7 @@ def process_packet(pkt):
                 except IndexError:
                     pass
 
-
+logger.info('Starting')
 if args.pcap:
     print 'Reading PCAP file %s...' % args.pcap
     sniff(offline=args.pcap, prn=lambda x: process_packet(x), store=0)
