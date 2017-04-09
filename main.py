@@ -6,6 +6,7 @@ from scapy.all import *
 from packet_processing import packet_processor
 
 django.setup()
+
 parser = argparse.ArgumentParser(description='WiFi Passive Server')
 parser.add_argument('-r', dest='pcap', action='store', help='pcap file to read')
 parser.add_argument('-i', dest='interface', action='store', default='mon0', help='interface to sniff (default mon0)')
@@ -20,17 +21,13 @@ total_pkt_count = 0
 interface = "mon0"
 
 
-def process_packet(pkt):
+def filter_and_send_packet(pkt):
     global total_pkt_count
     total_pkt_count += 1
 
     # Quick way to indicate that the sniffing is still continuing
     if total_pkt_count % 10000 == 0:
-        print 'Total Packet Count thus far: ' + str(total_pkt_count)
-        print str(datetime.now())
-
-    # print pkt.summary()
-    # print pkt.getlayer(Dot11).addr2
+        logger.info(str(datetime.now()) + 'Total Packet Count thus far: ' + str(total_pkt_count))
 
     # Dot11 == 802.11
 
@@ -50,14 +47,12 @@ def process_packet(pkt):
     if pkt.haslayer(Dot11) and pkt.haslayer(UDP) and pkt.dst == '224.0.0.251':
         packet_processor.ingest_mdns_packet(pkt)
 
-
-logger.info('Starting')
 if args.pcap:
-    print 'Reading PCAP file %s...' % args.pcap
-    sniff(offline=args.pcap, prn=lambda x: process_packet(x), store=0)
+    logger.info('Reading PCAP file %s...' % args.pcap)
+    sniff(offline=args.pcap, prn=lambda x: filter_and_send_packet(x), store=0)
 else:
-    print 'Realtime Sniffing on interface %s...' % args.interface
-    sniff(iface=args.interface, prn=lambda x: process_packet(x), store=0)
+    logger.info('Realtime Sniffing on interface %s...' % args.interface)
+    sniff(iface=args.interface, prn=lambda x: filter_and_send_packet(x), store=0)
 
 logger.info('Summary of devices detected:')
 
