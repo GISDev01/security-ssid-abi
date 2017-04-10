@@ -22,38 +22,46 @@ Instructions
 
 To use the web interface:
 
-1. Install or update required Python modules by running `sudo pip install -U -r requirements.txt`.
-2. Initialise an empty database by running `./manage.py syncdb`.
-3. Start the web interface by running `./manage.py runserver 127.0.0.1:8000`.
+1. Install or update required Python modules by running `sudo pip install -U -r requirements.txt`
+2. Initialise an empty database by running `./manage.py syncdb`
+3. Start the web interface by running `./manage.py runserver 127.0.0.1:8000` (feel free to change 127.0.0.1 to any  IP that you want the Django web server to listen on)
 
-To sniff wifi traffic:
+To sniff wifi traffic (possible to use a static .pcap file or to use a live monitoring interface)
 
-1. Install Scapy
+1. Install scapy (it is included in the requirements.txt)
 2. Import data from a wifi pcap capture by running `./run.sh -r <chan11.pcap>`
 3. For live capture, bring up a wifi interface in monitor mode (usually mon0) so that airodump-ng shows traffic.
+    Steps to get this running on a Ubuntu 16.04 VM (tested on both MBPt Sierra and Win10 Thinkpad T560)
+
+        sudo apt install aircrack-ng -y && sudo apt install python-pip -y && sudo apt install git -y
+        git clone https://github.com/GISDev01/security-ssid-abi.git
+        cd security-ssid-abi
+        sudo pip install -r requirements.txt
+        (Note: Ideally you'd be using conda or virtual environments, but this will do if you're just using this VM for this project)
+
+        sudo airmon-ng check kill
+        iwconfig
+        (check what your wireless NIC device is called using iwconfig (make sure your USB wireless NIC, such as an Alfa AWUS036NHA is passed-through to the VM)
+        Example value is something like: wlx00c022ca92321337a (or it could be something like wlan0)
+        sudo airmon-ng start wlx00c022ca92321337a
+
 4. Start live sniffing with `./run.sh -i mon0`. 
 
-To solicit ARPs from iOS devices, set up an access point with DHCP disabled (e.g. using airbase-ng) and configure your sniffing interface to the same channel.
 
-Once associated, iOS devices will send up to three ARPs destined for the MAC address of the DHCP server on previously joined networks. On typical home WiFi routers, the DHCP server MAC address is the same as the WiFi interface MAC address, which can be used for accurate geolocation. On larger corporate WiFi networks, the MAC of the DHCP server may be different and thus cannot be used for geolocation.
-
-Note that as of iOS 6, DNAv4 ARPs containing the information disclosure should only be sent on encrypted networks (to be verified). See http://lists.apple.com/archives/security-announce/2012/Sep/msg00003.html (CVE-2012-3725)
+Optional: To solicit ARPs from iOS devices, set up an access point with DHCP disabled (e.g. using airbase-ng) and configure your sniffing interface to the same channel. Once associated, iOS devices will send up to three ARPs destined for the MAC address of the DHCP server on previously joined networks. On typical home WiFi routers, the DHCP server MAC address is the same as the WiFi interface MAC address, which can be used for accurate geolocation.
 
 Dependencies
 ------------
 
 See requirements.txt for python modules and versions required.
 
-This repo was originally developed on a Ubuntu 12.04 (32-bit) VM with Python 2.7.3, Django 1.5.4 and Scapy 2.2.0-dev.
-The web interface code has been updated and tested with Django 1.7.1 running on Mac OS X Yosemite with Python 2.7.8.
+This repo was originally developed on a Ubuntu 16.04 (64-bit) VM with Python 2.7.12, Django 1.5.4 and Scapy 2.2.0.
+The web interface code has been updated and tested with Django 1.7.1 running on Mac OS X Sierra with Python 2.7.8.
 
-Conversion to Python 3 is planned.
-
-Network sniffing has been tested on MacOS Sierra 10.12.3, Windows 10, Ubuntu 16.04, and Raspian (RasPi 3).
+Network sniffing via airmon-ng has been tested on MacOS Sierra 10.12.3, Windows 10, Ubuntu 16.04, and Raspian (RasPi 3).
 
 Credits
 -------
-
 This repo was originally written by @hubert3 / hubert(at)pentest.com. Presented at Blackhat USA July 2012, code published on Github 2012-08-31.
 
 The implementation of wloc.py is based on work by François-Xavier Aguessy and Côme Demoustier [[2]][paper].
@@ -68,4 +76,4 @@ Includes Bluff JS chart library by James Coglan.
 [ars]: http://arstechnica.com/apple/2012/03/anatomy-of-an-iphone-leak/
 [paper]: http://fxaguessy.fr/rapport-pfe-interception-ssl-analyse-donnees-localisation-smartphones/
 
-Starting in mid-2017, several updates and upgrades are in progress 
+(gisdev01) Starting in mid-2017, several updates and upgrades are in progress, including addition of InfluxDB functionality, summary functionality, Raspberry Pi support, and several front-end updates.
