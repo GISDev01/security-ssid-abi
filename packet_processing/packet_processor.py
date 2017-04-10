@@ -6,6 +6,7 @@ from dnslib import DNSRecord
 from netaddr import EUI
 from scapy.all import *
 
+from db import influx
 from db.influx import influxdb_client
 from security_ssid.models import Client, AP
 
@@ -40,10 +41,11 @@ def ingest_dot11_probe_req_packet(probe_pkt):
             # unicode goes in DB for browser display
             update_summary_database(client_mac=client_mac, pkt_time=probe_pkt.time, SSID=probed_ssid)
 
+        if len(probed_ssid) > 0:
             if probe_pkt.notdecoded is not None:
                 # The location of the RSSI strength is dependent on the physical NIC
                 # Alfa AWUS 036N
-                #client_signal_strength = -(256 - ord(probe_pkt.notdecoded[-4:-3]))
+                # client_signal_strength = -(256 - ord(probe_pkt.notdecoded[-4:-3]))
 
                 # Alfa AWUS 036NHA (Atheros AR9271)
                 client_signal_strength = -(256 - ord(probe_pkt.notdecoded[-2:-1]))
@@ -55,6 +57,10 @@ def ingest_dot11_probe_req_packet(probe_pkt):
             # ascii only for console print
             logger.info("%s [%s] probeReq for %s, signal strength: %s" % (
                 get_manuf(client_mac), client_mac, ascii_printable(probed_ssid), client_signal_strength))
+            send_client_data_to_influxdb(client_mac,
+                                         probe_pkt.time,
+                                         client_signal_strength,
+                                         ascii_printable(probed_ssid))
     else:
         logger.debug('Dot11Elt and info missing from sub packet in Dot11ProbeReq')
 
@@ -197,8 +203,12 @@ def sniff_wifi_access_points(pkt):
             logger.info(pkt.addr1)
 
 
-def send_client_data_to_influxdb(client_device_observation):
+def send_client_data_to_influxdb(client_mac_addr, pkt_time, client_sig_rssi, probed_ssid_name):
     # Send client mac address, time of observation, and signal strength to influxDB measurement (table)
-    influx_formatted_data = influxdb_client.assemble_json(client_device_observation)
-    influxdb_client.write(influx_formatted_data)
+    influx_formatted_data = influx.assemble_json(measurement='clientdevices',
+                                                 pkt_timestamp=pkt_time,
+                                                 rssi_value=client_sig_rssi,
+                                                 client_mac_addr=client_mac_addr,
+                                                 probed_ssid=probed_ssid_name)
+    influx.write_data(influx_formatted_data)
     logger.debug('Client data sent to influxdb')
