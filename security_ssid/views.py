@@ -8,8 +8,7 @@ from django.shortcuts import render
 from django.views.generic import *
 from netaddr import EUI
 
-import wigle_query
-import wloc
+from location_utils import wigle_query, wloc
 from models import *
 
 
