@@ -1,8 +1,8 @@
-import settings
-from security_ssid import wigle_lib
+import security_ssid.settings
+from location_utils import wigle_lib
 
-wigle_apiname = settings.wigle_username
-wigle_apitoken = settings.wigle_username
+wigle_apiname = security_ssid.settings.wigle_username
+wigle_apitoken = security_ssid.settings.wigle_username
 
 
 def get_location(BSSID='', SSID=''):

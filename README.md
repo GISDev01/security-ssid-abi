@@ -9,13 +9,13 @@ Components
 ----------
 
 2 major components and further python modules:
-* iSniff_import.py uses [Scapy](http://www.secdev.org/projects/scapy/) to extract data from a live capture or pcap file and inserts it into a database (iSniff_GPS.sqlite3 by default).
+* main.py uses [Scapy](http://www.secdev.org/projects/scapy/) to extract data from a live capture or pcap file and inserts it into a database (monitor_results.sqlite3 by default). You can also use any of the other Django-supported data stores.
 
 * A Django web application provides a browser-based interface to view and analyse the data collected. This includes views of all detected devices and the SSIDs / BSSIDs each has probed for, a view by network, Google Maps views for visualising possible locations of a given BSSID or SSID, and a pie chart view showing a breakdown of the most popular device manufacturers based on client MAC address Ethernet OUIs.
 
-* __wloc.py__ provides a _QueryBSSID()_ function which looks up a given BSSID (AP MAC address) on Apple's WiFi location service. It will return the coordinates of the MAC queried for and usually an additional 400 nearby BSSIDs and their coordinates.
+* __location_utils/wloc.py__ provides a _QueryBSSID()_ function which looks up a given BSSID (AP MAC address) on Apple's WiFi location service. It will return the coordinates of the MAC queried for and usually an additional 400 nearby BSSIDs and their coordinates.
 
-* __wigle_api.py__ provides a _getLocation()_ function for querying a given SSID on the wigle.net database and returns GPS coordinates. It must be configured with a valid username and password set in the settings.py file. Please respect the wigle.net ToS in using this module.
+* __location_utils/wigle_lib.py__ provides a _getLocation()_ function for querying a given SSID on the wigle.net database and returns GPS coordinates. It must be configured with a valid username and password set in the settings.py file. Please respect the wigle.net ToS in using this module. This project-specific library has been created to work with the new Wigle API (V2). Big thanks to the Wigle team for their great support and allowing this project to use their data.
 
 Instructions
 ------------
@@ -45,7 +45,7 @@ To sniff wifi traffic (possible to use a static .pcap file or to use a live moni
         Example value is something like: wlx00c022ca92321337a (or it could be something like wlan0)
         sudo airmon-ng start wlx00c022ca92321337a
 
-4. Start live sniffing with `./run.sh -i mon0`. 
+4. Start live sniffing with `./run.sh -i mon0`  (Note: the -i param here is to identify the interface name that airmon-ng is monitoring packets with, default value is actually mon0, as well.)
 
 
 Optional: To solicit ARPs from iOS devices, set up an access point with DHCP disabled (e.g. using airbase-ng) and configure your sniffing interface to the same channel. Once associated, iOS devices will send up to three ARPs destined for the MAC address of the DHCP server on previously joined networks. On typical home WiFi routers, the DHCP server MAC address is the same as the WiFi interface MAC address, which can be used for accurate geolocation.
@@ -54,25 +54,21 @@ Dependencies
 ------------
 
 See requirements.txt for python modules and versions required.
+Externally, this application now writes out to an InfluxDB 1.2 data store.
 
-This repo was originally developed on a Ubuntu 16.04 (64-bit) VM with Python 2.7.12, Django 1.5.4 and Scapy 2.2.0.
+This repo has been recently developed on a Ubuntu 16.04 (64-bit) VM with Python 2.7.12, Django 1.5.4 and Scapy 2.2.0.
 The web interface code has been updated and tested with Django 1.7.1 running on Mac OS X Sierra with Python 2.7.8.
 
 Network sniffing via airmon-ng has been tested on MacOS Sierra 10.12.3, Windows 10, Ubuntu 16.04, and Raspian (RasPi 3).
 
 Credits
 -------
-This repo was originally written by @hubert3 / hubert(at)pentest.com. Presented at Blackhat USA July 2012, code published on Github 2012-08-31.
-
+This repo was originally written by @hubert3 / hubert(at)pentest.com. Presented at Blackhat USA July 2012, the original code published on Github 2012-08-31.
 The implementation of wloc.py is based on work by François-Xavier Aguessy and Côme Demoustier [[2]][paper].
-
 Mark Wuergler of Immunity, Inc. provided helpful information through mailing list posts and Twitter replies.
-
 Includes Bluff JS chart library by James Coglan.
-
 1. http://arstechnica.com/apple/2012/03/anatomy-of-an-iphone-leak/
 2. http://fxaguessy.fr/rapport-pfe-interception-ssl-analyse-donnees-localisation-smartphones/
-
 [ars]: http://arstechnica.com/apple/2012/03/anatomy-of-an-iphone-leak/
 [paper]: http://fxaguessy.fr/rapport-pfe-interception-ssl-analyse-donnees-localisation-smartphones/
 
