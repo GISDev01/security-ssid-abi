@@ -7,16 +7,12 @@ from netaddr import EUI
 from scapy.all import *
 
 from db import influx
-from security_ssid.models import Client, AP
-
 from mac_parser import manuf
+from security_ssid.models import Client, AP
 
 logger = logging.getLogger(__name__)
 client = defaultdict(list)
 mac_parser_ws = manuf.MacParser()
-
-def ascii_printable(s):
-    return ''.join(i for i in s if ord(i) > 31 and ord(i) < 128)
 
 
 def ingest_dot11_probe_req_packet(probe_pkt):
@@ -173,6 +169,13 @@ def create_or_update_client(mac_addr, utc, name=None):
         logger.info('Updated name of %s to %s' % (_client, _client.name))
     _client.save()
     return _client
+
+
+def ascii_printable(s):
+    if s is not None:
+        return ''.join(i for i in s if ord(i) > 31 and ord(i) < 128)
+    else:
+        return ''
 
 
 def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
