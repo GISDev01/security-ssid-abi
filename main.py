@@ -22,19 +22,19 @@ interface = "mon0"
 
 
 def filter_and_send_packet(pkt):
-    global total_pkt_count
-    total_pkt_count += 1
-
-    # Quick way to indicate that the sniffing is still continuing
-    if total_pkt_count % 10000 == 0:
-        logger.info(str(datetime.now()) + 'Total Packet Count thus far: ' + str(total_pkt_count))
+    # global total_pkt_count
+    # total_pkt_count += 1
+    #
+    # # Quick way to indicate that the sniffing is still continuing
+    # if total_pkt_count % 100000 == 0:
+    #     logger.info(str(datetime.now()) + 'Total Packet Count thus far: ' + str(total_pkt_count))
 
     # Dot11 == 802.11
 
     if pkt.haslayer(ARP):
         packet_processor.ingest_ARP_packet(pkt)
 
-    elif pkt.haslayer(Dot11ProbeReq):
+    if pkt.haslayer(Dot11ProbeReq):
         packet_processor.ingest_dot11_probe_req_packet(pkt)
 
     # elif pkt.haslayer(Dot11AssoReq) or pkt.haslayer(Dot11AssoResp) or pkt.haslayer(Dot11ReassoReq) or pkt.haslayer(
