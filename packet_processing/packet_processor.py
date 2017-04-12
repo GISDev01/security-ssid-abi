@@ -7,13 +7,13 @@ from netaddr import EUI
 from scapy.all import *
 
 from db import influx
-from db.influx import influxdb_client
 from security_ssid.models import Client, AP
 
+from mac_parser import manuf
+
 logger = logging.getLogger(__name__)
-
 client = defaultdict(list)
-
+mac_parser_ws = manuf.MacParser()
 
 def ascii_printable(s):
     return ''.join(i for i in s if ord(i) > 31 and ord(i) < 128)
@@ -66,7 +66,7 @@ def ingest_dot11_probe_req_packet(probe_pkt):
 
 
 def ingest_ARP_packet(arp_pkt):
-    logger.debug('ARP packet detected.')
+    logger.info('ARP packet detected.')
     arp = arp_pkt.getlayer(ARP)
     dot11 = arp_pkt.getlayer(Dot11)
     mode = ''
@@ -140,13 +140,17 @@ def ingest_mdns_packet(mdns_pkt):
 
 
 def get_manuf(mac_addr):
+    # Try 2 different parsers on the mac address to find the Manufacturer
     try:
         mac = EUI(mac_addr)
-        manuf = mac.oui.records[0]['org'].split(' ')[0].replace(',', '')
+        calced_manufacturer = mac.oui.records[0]['org'].split(' ')[0].replace(',', '')
     except:
-        manuf = 'unknown'
-    logger.debug('Manufacturer: %s', ascii_printable(manuf))
-    return ascii_printable(manuf)
+        try:
+            calced_manufacturer = mac_parser_ws.get_manuf(mac_addr)
+        except:
+            calced_manufacturer = 'unknown'
+
+    return ascii_printable(calced_manufacturer)
 
 
 def create_or_update_client(mac_addr, utc, name=None):

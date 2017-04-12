@@ -105,7 +105,7 @@ class stats(TemplateView):
         l = []
         for m in manuf.items():
             l.append(m)
-        context['manuf'] = sorted(l, key=itemgetter(1), reverse=True)[:10]
+        context['mac_db'] = sorted(l, key=itemgetter(1), reverse=True)[:10]
         context['devicecount'] = len(Client.objects.all())
         return context
 
