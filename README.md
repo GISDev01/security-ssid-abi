@@ -45,10 +45,13 @@ To sniff wifi traffic (possible to use a static .pcap file or to use a live moni
         Example value is something like: wlx00c022ca92321337a (or it could be something like wlan0)
         sudo airmon-ng start wlx00c022ca92321337a
 
-4. Start live sniffing with `./run.sh -i mon0`  (Note: the -i param here is to identify the interface name that airmon-ng is monitoring packets with, default value is actually mon0, as well.)
+4. Get InfluxDB up and running, and update the .\security_ssid\settings.py with the correct IP or hostname of the InfluxDB box.
+
+5. Start live sniffing with `./run.sh -i mon0`  (Note: the -i param here is to identify the interface name that airmon-ng is monitoring packets with, default value is actually mon0, as well.)
 
 
 Optional: To solicit ARPs from iOS devices, set up an access point with DHCP disabled (e.g. using airbase-ng) and configure your sniffing interface to the same channel. Once associated, iOS devices will send up to three ARPs destined for the MAC address of the DHCP server on previously joined networks. On typical home WiFi routers, the DHCP server MAC address is the same as the WiFi interface MAC address, which can be used for accurate geolocation.
+
 
 Dependencies
 ------------
