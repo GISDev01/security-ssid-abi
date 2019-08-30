@@ -4,5 +4,5 @@ dnslib==0.9.7
 netaddr==0.7.19
 protobuf==2.6.1
 requests==2.13.0
-scapy==2.3.3
+scapy==2.4.1
 influxdb==4.0.0
