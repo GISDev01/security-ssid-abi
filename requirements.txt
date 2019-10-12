@@ -1,4 +1,4 @@
-Django==1.7.1
+Django==1.11.23
 django-picklefield==0.3.2
 dnslib==0.9.7
 netaddr==0.7.19
