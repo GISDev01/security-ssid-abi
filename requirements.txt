@@ -5,5 +5,5 @@ netaddr==0.7.19
 protobuf==2.6.1
 dependabot/pip/requests-2.20.0
 requests==2.20.0
-scapy==2.3.3
+scapy>=2.4.1
 influxdb==4.0.0
