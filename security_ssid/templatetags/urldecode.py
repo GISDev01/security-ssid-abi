@@ -1,4 +1,4 @@
-from urllib import unquote
+from urllib.parse import unquote
 
 from django import template
 
