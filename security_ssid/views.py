@@ -1,5 +1,4 @@
 import re
-from string import lower
 
 from django.core.exceptions import *
 from django.db.models import Count
@@ -9,7 +8,8 @@ from django.views.generic import *
 from netaddr import EUI
 
 from location_utils import wigle_query, wloc
-from models import *
+
+from security_ssid.models import Client, AP, PointDB
 
 
 def get_manuf(apdict):
@@ -82,7 +82,7 @@ class APDetail(DetailView):
         return a
 
     def get_context_data(self, **kwargs):
-        print self.kwargs
+        print(self.kwargs)
         context = super(APDetail, self).get_context_data(**kwargs)
         context['Clients'] = self.object.client.all()
         return context
@@ -126,17 +126,17 @@ def getCenter(apdict):
 def AppleWloc(request, bssid=None):
     if not bssid:
         bssid = '00:1e:52:7a:ae:ad'
-    print 'Got request for %s' % bssid
+    print('Got request for %s' % bssid)
     if request.GET.get('ajax'):
         template = 'apple-wloc-ajax.js'
     else:
         template = 'apple-wloc.html'
         request.session['apdict'] = {}
         request.session['apset'] = set()  # reset server-side cache of unique bssids if we load page normally
-    print '%s in set at start' % len(request.session['apset'])
-    bssid = lower(bssid)
+    print('%s in set at start' % len(request.session['apset']))
+    bssid = bssid.toLower()
     apdict = wloc.QueryBSSID(bssid)
-    print '%s returned from Apple' % len(apdict)
+    print('%s returned from Apple' % len(apdict))
     dupes = 0
     for ap in apdict.keys():
         if ap in request.session['apset']:
@@ -144,9 +144,9 @@ def AppleWloc(request, bssid=None):
             del apdict[ap]
         request.session['apset'].add(ap)
     numresults = len(apdict)
-    print '%s dupes excluded' % dupes
-    print '%s in set post filter' % len(request.session['apset'])
-    print '%s returned to browser post filter' % numresults
+    print('%s dupes excluded' % dupes)
+    print('%s in set post filter' % len(request.session['apset']))
+    print('%s returned to browser post filter' % numresults)
     # if numresults == 0 or (-180.0, -180.0) in apdict.values():
     #	return HttpResponse('0 results.')
     if bssid in apdict.keys():
@@ -154,12 +154,12 @@ def AppleWloc(request, bssid=None):
             a = AP.objects.get(BSSID=bssid)  # original design - only save ap to db if it's one that has been probed for
             (a.lat, a.lon) = apdict[bssid]
             a.save()  # if Apple returns a match for BSSID we save this as location
-            print 'Updated %s location to %s' % (a, (a.lat, a.lon))
+            print('Updated %s location to %s' % (a, (a.lat, a.lon)))
         except ObjectDoesNotExist:
             pass
     for key in apdict.keys():
         request.session['apdict'][key] = apdict[key]
-    print 'Session apdict: %s' % len(request.session['apdict'])
+    print('Session apdict: %s' % len(request.session['apdict']))
     return render(request, template,
                   {'bssid': bssid, 'hits': len(apdict), 'center': getCenter(apdict), 'bssids': apdict.keys(),
                    'apdict': apdict, 'manufdict': get_manuf(apdict)})
@@ -170,7 +170,7 @@ def LoadDB(request, name=None):
     request.session['apdict'] = c.pointdict
     apdict = request.session['apdict']
     request.session['apset'] = set(apdict.keys())
-    print 'Loaded saved DB %s from %s' % (name, c.date_saved)
+    print('Loaded saved DB %s from %s' % (name, c.date_saved))
     return render(request, 'apple-wloc.html',
                   {'bssid': apdict.keys()[0], 'hits': len(apdict), 'center': getCenter(apdict), 'bssids': apdict.keys(),
                    'apdict': apdict, 'manufdict': get_manuf(apdict)})
