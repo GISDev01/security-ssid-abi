@@ -2,8 +2,12 @@ import argparse
 
 import django
 from scapy.all import *
+from scapy.layers.dot11 import Dot11, Dot11AssoReq, Dot11AssoResp, Dot11ProbeReq, Dot11ReassoReq, Dot11ReassoResp
+from scapy.layers.inet import UDP
+from scapy.layers.l2 import ARP
 
 from packet_processing import packet_processor
+from packet_processing.packet_processor import client, get_manuf, ascii_printable
 
 django.setup()
 
@@ -22,14 +26,12 @@ interface = "mon0"
 
 
 def filter_and_send_packet(pkt):
-    # global total_pkt_count
-    # total_pkt_count += 1
-    #
-    # # Quick way to indicate that the sniffing is still continuing
-    # if total_pkt_count % 100000 == 0:
-    #     logger.info(str(datetime.now()) + 'Total Packet Count thus far: ' + str(total_pkt_count))
+    global total_pkt_count
+    total_pkt_count += 1
 
-    # Dot11 == 802.11
+    # Quick way to indicate that the sniffing is still continuing
+    if total_pkt_count % 100000 == 0:
+        logger.info(str(datetime.now()) + ' : Total Packet Count thus far: ' + str(total_pkt_count))
 
     if pkt.haslayer(ARP):
         packet_processor.ingest_ARP_packet(pkt)
@@ -37,15 +39,20 @@ def filter_and_send_packet(pkt):
     if pkt.haslayer(Dot11ProbeReq):
         packet_processor.ingest_dot11_probe_req_packet(pkt)
 
-    # elif pkt.haslayer(Dot11AssoReq) or pkt.haslayer(Dot11AssoResp) or pkt.haslayer(Dot11ReassoReq) or pkt.haslayer(
-    #         Dot11ReassoResp):
-    #     # logger.debug('Packet with Asso Req:')
-    #     # logger.debug('Packet Summary: ' + str(pkt.summary()))
-    #     # logger.debug('Packet Fields: ' + str(pkt.fields))
-    #     pass
+    elif pkt.haslayer(Dot11AssoReq) or \
+            pkt.haslayer(Dot11AssoResp) or \
+            pkt.haslayer(Dot11ReassoReq) or \
+            pkt.haslayer(Dot11ReassoResp):
+        logger.debug('Packet with Asso Req:')
+        logger.debug('Packet Summary: ' + str(pkt.summary()))
+        logger.debug('Packet Fields: ' + str(pkt.fields))
+        pass
 
-    if pkt.haslayer(Dot11) and pkt.haslayer(UDP) and pkt.dst == '224.0.0.251':
+    if pkt.haslayer(Dot11) and \
+            pkt.haslayer(UDP) and \
+                    pkt.dst == '224.0.0.251':
         packet_processor.ingest_mdns_packet(pkt)
+
 
 if args.pcap:
     logger.info('Reading PCAP file %s...' % args.pcap)
@@ -56,5 +63,7 @@ else:
 
 logger.info('Summary of devices detected:')
 
-# for mac in client:
-#     print '%s [%s] probed for %s' % (get_manuf(mac), mac, ', '.join(map(ascii_printable, client[mac])))
+for mac in client:
+    logger.info('{} [{}] probed for {}'.format(get_manuf(mac),
+                                               mac,
+                                               ', '.join(map(ascii_printable([mac])))))
