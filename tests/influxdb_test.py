@@ -1,5 +1,4 @@
 from db.influx import influxdb_client
-import logging
 
 mobile_measurement_name = 'mobiledevices'
 access_pts_measurement_name = 'accesspoints'
