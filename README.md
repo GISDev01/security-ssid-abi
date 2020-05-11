@@ -27,11 +27,16 @@ This includes views of:
 ------------
 
 * To use the web interface:
-Prereq: Python 3.6 and pip installed
+Prereq: Python 3.7 and pip installed
 
-1. Install or update required Python modules by running `sudo pip install -U -r requirements.txt`
-2. Initialize an empty database by running `./manage.py syncdb`
-3. Start the web interface by running `./manage.py runserver 127.0.0.1:8000` (feel free to change 127.0.0.1 to any  IP that you want the Django web server to listen on)
+1. Install or update required Python modules by running
+`pip install -r requirements.txt`
+2. Initialize an empty sqlite database (for Django) by running
+`python manage.py migrate --run-syncdb`
+`./manage.py createsuperuser` (Create creds to log in to the /admin endpoint)
+3. Start the web interface by running
+`./manage.py runserver 127.0.0.1:8000`
+(change 127.0.0.1 to any IP that you want the Django web server to listen on)
 
 * To sniff traffic (possible to use a static .pcap file or to use a live monitoring interface)
 Preq: airodump-ng for live monitoring
@@ -44,7 +49,7 @@ Preq: airodump-ng for live monitoring
         `sudo apt install aircrack-ng -y && sudo apt install python-pip -y && sudo apt install git -y`
         `git clone https://github.com/GISDev01/security-ssid-abi.git`
         `cd security-ssid-abi`
-        `sudo pip install -r requirements.txt`
+        `pip install -r requirements.txt`
         (Note: Ideally you'd be using conda or virtual environments, but this will do if you're just using this VM for this project)
 
         `sudo airmon-ng check kill`
@@ -54,6 +59,9 @@ Preq: airodump-ng for live monitoring
         `sudo airmon-ng start wlx00c022ca92321337a`
 
 4. Get InfluxDB up and running, and update the .\security_ssid\settings.py with the correct IP or hostname of the InfluxDB box.
+Note: Fastest way to get it up and running for development is with Docker:
+* docker run -p 8086:8086 influxdb:1.8.0
+
 
 5. Start live sniffing with:
  `./run.sh -i mon0`
@@ -68,14 +76,12 @@ Dependencies
 ------------
 
 See requirements.txt for python modules and versions required.
-Externally, this application writes out to an InfluxDB 1.2 data store.
+Externally, this application writes out to an InfluxDB data store.
 
 This repo has been recently developed on a Ubuntu 16.04 (64-bit) VM with Python 3.7, Django 3.x and Scapy 2.4.x.
 The web interface code has been updated and tested with Django running on Mac OS X Sierra with Python 3.7.x.
 
 Network sniffing via airmon-ng has been tested on MacOS High Sierra 10.13.3, Windows 10, Ubuntu 16.04, and Raspian (RasPi 3).
-
-
 
 
 Credits
