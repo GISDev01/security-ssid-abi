@@ -60,7 +60,16 @@ class WigleSearch():
         while True:
             if on_new_page:
                 on_new_page(params.get('first', 1))
-            resp = requests.get(WIGLE_ENDPOINT_API_V2, auth=(self.user, self.password), params=params)
+            if self.user == '' or self.password == '':
+                print("Username and/or Password missing for Wigle API")
+                return []
+
+            resp = requests.get(WIGLE_ENDPOINT_API_V2,
+                                auth=(self.user, self.password),
+                                params=params)
+
+            print('Wigle API Raw Response: {}'.format(resp.content))
+
             data = resp.json()
             if not data['success']:
                 raise_wigle_error(data)
@@ -74,7 +83,6 @@ class WigleSearch():
 
             params['first'] = data['last'] + 1
 
-        # print result_wifi
         return result_wifi
 
 
