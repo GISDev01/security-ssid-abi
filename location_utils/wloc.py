@@ -1,16 +1,10 @@
-# -*- coding: utf-8 -*-
-# !/usr/bin/python
-
 # Mostly taken from paper by François-Xavier Aguessy and Côme Demoustier
 # http://fxaguessy.fr/rapport-pfe-interception-ssl-analyse-donnees-localisation-smartphones/
 
 import requests
 
-import BSSIDApple_pb2
-import GSM_pb2
-
-
-# import simplekml
+from location_utils import BSSIDApple_pb2
+from location_utils import GSM_pb2
 
 def padBSSID(bssid):
     result = ''
@@ -33,11 +27,11 @@ def ListWifiDepuisApple(wifi_list):
             mac = padBSSID(wifi.bssid)
             apdict[mac] = (lat, lon)
         if wifi_list.HasField('valeur_inconnue1'):
-            print 'Inconnu1 : ', '%X' % wifi_list.valeur_inconnue1
+            print('Inconnu1 : ', '%X' % wifi_list.valeur_inconnue1)
         if wifi_list.HasField('valeur_inconnue2'):
-            print 'Inconnu2 : ', '%X' % wifi_list.valeur_inconnue1
+            print('Inconnu2 : ', '%X' % wifi_list.valeur_inconnue1)
         if wifi_list.HasField('APIName'):
-            print 'APIName : ', wifi_list.APIName
+            print('APIName : ', wifi_list.APIName)
             # kml.save("test.kml")
     return apdict
 
@@ -82,7 +76,7 @@ def ProcessMobileResponse(cell_list):
 
 def QueryBSSID(query, more_results=True):
     liste_wifi = BSSIDApple_pb2.BlockBSSIDApple()
-    if type(query) in (str, unicode):
+    if type(query) == str:
         bssid_list = [query]
     elif type(query) == list:
         bssid_list = query
@@ -96,18 +90,27 @@ def QueryBSSID(query, more_results=True):
         liste_wifi.valeur_inconnue2 = 0  # last byte in request == 0 means return ~400 results, 1 means only return results for BSSIDs queried
     else:
         liste_wifi.valeur_inconnue2 = 1
-    chaine_liste_wifi = liste_wifi.SerializeToString()
-    longueur_chaine_liste_wifi = len(chaine_liste_wifi)
-    headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': '*/*', "Accept-Charset": "utf-8",
-               "Accept-Encoding": "gzip, deflate", \
-               "Accept-Language": "en-us", 'User-Agent': 'locationd/1753.17 CFNetwork/711.1.12 Darwin/14.0.0'}
-    data = "\x00\x01\x00\x05" + "en_US" + "\x00\x13" + "com.apple.locationd" + "\x00\x0a" + "8.1.12B411" + "\x00\x00\x00\x01\x00\x00\x00" + chr(
-        longueur_chaine_liste_wifi) + chaine_liste_wifi;
-    r = requests.post('https://gs-loc.apple.com/clls/wloc', headers=headers, data=data,
-                      verify=False)  # CN of cert on this hostname is sometimes *.ls.apple.com / ls.apple.com, so have to disable SSL verify
-    liste_wifi = BSSIDApple_pb2.BlockBSSIDApple()
-    liste_wifi.ParseFromString(r.content[10:])
-    return ListWifiDepuisApple(liste_wifi)
+
+    # chaine_liste_wifi = liste_wifi.SerializeToString()
+    #
+    # longueur_chaine_liste_wifi = len(chaine_liste_wifi)
+    #
+    # headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': '*/*', "Accept-Charset": "utf-8",
+    #            "Accept-Encoding": "gzip, deflate", \
+    #            "Accept-Language": "en-us", 'User-Agent': 'locationd/1753.17 CFNetwork/711.1.12 Darwin/14.0.0'}
+    #
+    # data = "\x00\x01\x00\x05" + "en_US" + "\x00\x13" + \
+    #        "com.apple.locationd" + "\x00\x0a" + "8.1.12B411" + \
+    #        "\x00\x00\x00\x01\x00\x00\x00" + str(longueur_chaine_liste_wifi) + \
+    #        str(chaine_liste_wifi)
+    #
+    # r = requests.post('https://gs-loc.apple.com/clls/wloc', headers=headers, data=data,
+    #                   verify=False)  # CN of cert on this hostname is sometimes *.ls.apple.com / ls.apple.com, so have to disable SSL verify
+    # liste_wifi = BSSIDApple_pb2.BlockBSSIDApple()
+    #
+    # liste_wifi.ParseFromString(r.content[10:])
+    # return ListWifiDepuisApple(liste_wifi)
+    return {}
 
 
 def QueryMobile(cellid, LTE=False):
@@ -146,7 +149,7 @@ def QueryMobile(cellid, LTE=False):
     # print('Wrote request.bin')
     # f.close()
     cellid = '%s:%s:%s:%s' % (MCC, MNC, LAC, CID)
-    print 'Querying %s' % cellid
+    print('Querying %s' % cellid)
     r = requests.post('https://gs-loc.apple.com/clls/wloc', headers=headers, data=data,
                       verify=False)  # the remote SSL cert CN on this server doesn't match hostname anymore
     if LTE:
