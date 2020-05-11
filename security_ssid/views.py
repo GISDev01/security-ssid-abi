@@ -124,31 +124,43 @@ def getCenter(apdict):
 
 
 def AppleWloc(request, bssid=None):
+    return HttpResponse('This is currently disabled.')
+
     if not bssid:
+        print("Setting to Default BSSID")
         bssid = '00:1e:52:7a:ae:ad'
+
     print('Got request for %s' % bssid)
+
     if request.GET.get('ajax'):
         template = 'apple-wloc-ajax.js'
     else:
         template = 'apple-wloc.html'
         request.session['apdict'] = {}
-        request.session['apset'] = set()  # reset server-side cache of unique bssids if we load page normally
-    print('%s in set at start' % len(request.session['apset']))
-    bssid = bssid.toLower()
+        request.session['apset'] = []  # reset server-side cache of unique bssids if we load page normally
+
+    bssid = bssid.lower()
     apdict = wloc.QueryBSSID(bssid)
-    print('%s returned from Apple' % len(apdict))
+
     dupes = 0
     for ap in apdict.keys():
         if ap in request.session['apset']:
             dupes += 1
             del apdict[ap]
         request.session['apset'].add(ap)
+
     numresults = len(apdict)
+
     print('%s dupes excluded' % dupes)
     print('%s in set post filter' % len(request.session['apset']))
     print('%s returned to browser post filter' % numresults)
-    # if numresults == 0 or (-180.0, -180.0) in apdict.values():
-    #	return HttpResponse('0 results.')
+
+    if numresults == 0 or (-180.0, -180.0) in apdict.values():
+        print('0 results.')
+        return HttpResponse('0 results.')
+    else:
+        print('Not 0 results')
+
     if bssid in apdict.keys():
         try:
             a = AP.objects.get(BSSID=bssid)  # original design - only save ap to db if it's one that has been probed for
@@ -187,6 +199,8 @@ def SaveDB(request, name=None):
 
 
 def AppleMobile(request, cellid=None, LTE=False):
+    return HttpResponse('This is currently disabled.')
+
     if 'cellset' not in request.session:
         request.session['cellset'] = set()
     if request.GET.get('ajax'):
