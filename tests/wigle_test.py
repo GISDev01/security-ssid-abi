@@ -73,7 +73,7 @@ class WigleSearch():
 
             params['first'] = data['last'] + 1
 
-        print result_wifi
+        print(result_wifi)
         return result_wifi
 
 
