@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from models import Client, AP, Location
+from .models import Client, AP, Location
 
 
 class ClientAdmin(admin.ModelAdmin):
