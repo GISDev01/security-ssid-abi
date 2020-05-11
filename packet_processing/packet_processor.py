@@ -1,10 +1,14 @@
 import binascii
 
 from django.core.exceptions import *
+
 # for mdns/bonjour name parsing
 from dnslib import DNSRecord
 from netaddr import EUI
+
 from scapy.all import *
+from scapy.layers.dot11 import Dot11Elt, Dot11
+from scapy.layers.l2 import ARP, Ether
 
 from db import influx
 from mac_parser import manuf
@@ -114,7 +118,7 @@ def ingest_mdns_packet(mdns_pkt):
     # only parse MDNS names for 802.11 layer sniffing for now, easy to see what's a request from a client
     for mdns_pkt in mdns_pkt:
         if mdns_pkt.dport == 5353:
-            print 'Packet destination port 5353'
+            logger.debug('Packet destination port 5353')
             try:
                 d = DNSRecord.parse(mdns_pkt['Raw.load'])
                 for q in d.questions:
