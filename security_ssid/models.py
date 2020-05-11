@@ -43,7 +43,7 @@ class PointDB(models.Model):
 
 
 class Location(models.Model):
-    ap = models.ForeignKey(AP)
+    ap = models.ForeignKey(AP, on_delete=models.CASCADE)
     lon = models.FloatField()
     lat = models.FloatField()
     name = models.CharField(max_length=200, blank=True)

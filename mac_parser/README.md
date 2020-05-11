@@ -1,4 +1,4 @@
-Everything in this /manuf subfolder is from this GitHub Repo:
+Everything in this /mac_parser subfolder is from this GitHub Repo:
 https://github.com/coolbho3k/manuf
 
 Thanks to Michael Huang for sharing his code on parsing the Wireshark DB.

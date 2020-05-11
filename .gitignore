@@ -1,5 +1,6 @@
 security_ssid/settings.py
 .idea/
+db.sqlite3
 color.pyc
 security_ssid/BSSIDApple_pb2.pyc
 security_ssid/GSM_pb2.pyc
