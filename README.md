@@ -39,17 +39,22 @@ Prereq: Python 3.7 and pip installed
 (change 127.0.0.1 to any IP that you want the Django web server to listen on)
 
 * To sniff traffic (possible to use a static .pcap file or to use a live monitoring interface)
-Preq: airodump-ng for live monitoring
+Preq: airodump-ng (part of aircrack-ng) for live monitoring
 
 1. Install scapy (it is included in the requirements.txt)
 2. For a pcap file: Import data from a wifi pcap capture by running `./run.sh -r <chan11.pcap>`
 3. For live capture: Bring up a wifi interface in monitor mode (usually mon0) so that airodump-ng shows traffic.
     Steps to get this running on a Ubuntu 16.04 Box
 
-        `sudo apt install aircrack-ng -y && sudo apt install python-pip -y && sudo apt install git -y`
+        `sudo apt install aircrack-ng -y && sudo apt install python3-pip -y && sudo apt install git -y`
+        `sudo apt install software-properties-common`
+        `sudo add-apt-repository ppa:deadsnakes/ppa`
+        `sudo apt update`
+        `sudo apt install python3.7`
+
         `git clone https://github.com/GISDev01/security-ssid-abi.git`
         `cd security-ssid-abi`
-        `pip install -r requirements.txt`
+        `pip3 install -r requirements.txt`
         (Note: Ideally you'd be using conda or virtual environments, but this will do if you're just using this VM for this project)
 
         `sudo airmon-ng check kill`
