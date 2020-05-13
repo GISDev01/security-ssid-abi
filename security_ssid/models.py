@@ -14,6 +14,9 @@ class Client(models.Model):
     def __unicode__(self):
         return u'%s' % (self.mac)
 
+    class Meta:
+        app_label = 'security_ssid'
+
 
 class AP(models.Model):
     client = models.ManyToManyField(Client)
@@ -35,12 +38,16 @@ class AP(models.Model):
         if self.BSSID:
             return u'<font color="red">ARP:%s</font>' % self.BSSID
 
+    class Meta:
+        app_label = 'security_ssid'
 
 class PointDB(models.Model):
     name = models.CharField(max_length=200, unique=True)
     date_saved = models.DateTimeField('date saved', default=datetime.now)
     pointdict = PickledObjectField()
 
+    class Meta:
+        app_label = 'security_ssid'
 
 class Location(models.Model):
     ap = models.ForeignKey(AP, on_delete=models.CASCADE)
@@ -52,3 +59,6 @@ class Location(models.Model):
 
     def __unicode__(self):
         return u'%s,%s' % (self.lon, self.lat)
+
+    class Meta:
+        app_label = 'security_ssid'
