@@ -5,6 +5,7 @@ from django.core.exceptions import *
 # for mdns/bonjour name parsing
 from dnslib import DNSRecord
 from netaddr import EUI
+from pytz import utc
 
 from scapy.all import *
 from scapy.layers.dot11 import Dot11Elt, Dot11
@@ -196,7 +197,7 @@ def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
         except ObjectDoesNotExist:
             access_pt = AP(BSSID=BSSID, lastprobed_date=utc_pkt_time, manufacturer=get_manuf(BSSID))
 
-    if access_pt.lastprobed_date and access_pt.lastprobed_date < utc_pkt_time:
+    if access_pt.lastprobed_date and access_pt.lastprobed_date < utc.localize(utc_pkt_time):
         access_pt.lastprobed_date = utc_pkt_time
 
     # avoid ValueError: 'AP' instance needs to have a primary key value before a many-to-many relationship can be used.
