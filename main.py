@@ -1,15 +1,17 @@
 import argparse
 
 import django
+
 from scapy.all import *
 from scapy.layers.dot11 import Dot11, Dot11AssoReq, Dot11AssoResp, Dot11ProbeReq, Dot11ReassoReq, Dot11ReassoResp
 from scapy.layers.inet import UDP
 from scapy.layers.l2 import ARP
 
+django.setup()
+
 from packet_processing import packet_processor
 from packet_processing.packet_processor import client, get_manuf, ascii_printable
 
-django.setup()
 
 parser = argparse.ArgumentParser(description='WiFi Passive Server')
 parser.add_argument('-r', dest='pcap', action='store', help='pcap file to read')
