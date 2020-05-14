@@ -18,7 +18,7 @@ parser.add_argument('-r', dest='pcap', action='store', help='pcap file to read')
 parser.add_argument('-i', dest='interface', action='store', default='mon0', help='interface to sniff (default mon0)')
 args = parser.parse_args()
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # count of scapy packets received
@@ -28,6 +28,7 @@ interface = "mon0"
 
 
 def filter_and_send_packet(pkt):
+    logger.debug(pkt)
     global total_pkt_count
     total_pkt_count += 1
 
