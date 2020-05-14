@@ -157,8 +157,9 @@ def get_manuf(mac_addr):
 
 
 def create_or_update_client(mac_addr, utc, name=None):
-    utc = pytz.UTC.localize(utc)
+    utc = pytz.timezone("America/New_York").localize(utc)
     logger.debug('Create or update client for mac addr.: ' + str(mac_addr))
+
     try:
         _client = Client.objects.get(mac=mac_addr)
 
@@ -187,25 +188,27 @@ def ascii_printable(s):
 
 
 def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
-    utc_pkt_time = datetime.utcfromtimestamp(pkt_time)
+    local_pkt_time = pytz.timezone("America/New_York").localize(datetime.utcfromtimestamp(pkt_time))
+
     if SSID:
         try:
             access_pt = AP.objects.get(SSID=SSID)
         except ObjectDoesNotExist:
-            access_pt = AP(SSID=SSID, lastprobed_date=utc_pkt_time, manufacturer='Unknown')
+            access_pt = AP(SSID=SSID, lastprobed_date=local_pkt_time, manufacturer='Unknown')
+
     elif BSSID:
         try:
             access_pt = AP.objects.get(BSSID=BSSID)
         except ObjectDoesNotExist:
-            access_pt = AP(BSSID=BSSID, lastprobed_date=utc_pkt_time, manufacturer=get_manuf(BSSID))
+            access_pt = AP(BSSID=BSSID, lastprobed_date=local_pkt_time, manufacturer=get_manuf(BSSID))
 
-    if access_pt.lastprobed_date and access_pt.lastprobed_date < pytz.UTC.localize(utc_pkt_time):
-        access_pt.lastprobed_date = utc_pkt_time
+    if access_pt.lastprobed_date and access_pt.lastprobed_date < local_pkt_time:
+        access_pt.lastprobed_date = local_pkt_time
 
     # avoid ValueError: 'AP' instance needs to have a primary key value before a many-to-many relationship can be used.
     access_pt.save()
 
-    access_pt.client.add(create_or_update_client(client_mac, utc_pkt_time))
+    access_pt.client.add(create_or_update_client(client_mac, local_pkt_time))
     access_pt.save()
 
 
