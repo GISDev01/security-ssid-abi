@@ -12,6 +12,7 @@ from scapy.layers.l2 import ARP, Ether
 
 from db import influx
 from mac_parser import manuf
+
 from security_ssid.models import Client, AP
 
 logger = logging.getLogger(__name__)
