@@ -156,6 +156,7 @@ def get_manuf(mac_addr):
 
 
 def create_or_update_client(mac_addr, utc, name=None):
+    utc = utc.localize(utc)
     logger.debug('Create or update client for mac addr.: ' + str(mac_addr))
     try:
         _client = Client.objects.get(mac=mac_addr)
