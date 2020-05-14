@@ -44,24 +44,23 @@ Preq: airodump-ng (part of aircrack-ng) for live monitoring
 1. Install scapy (it is included in the requirements.txt)
 2. For a pcap file: Import data from a wifi pcap capture by running `./run.sh -r <chan11.pcap>`
 3. For live capture: Bring up a wifi interface in monitor mode (usually mon0) so that airodump-ng shows traffic.
-    Steps to get this running on a Ubuntu 16.04 Box
+Steps to get this running on a Ubuntu 16.04.6 Box
 
-        `sudo apt install aircrack-ng -y && sudo apt install python3-pip -y && sudo apt install git -y`
-        `sudo apt install software-properties-common`
-        `sudo add-apt-repository ppa:deadsnakes/ppa`
-        `sudo apt update`
-        `sudo apt install python3.7`
+`sudo apt install aircrack-ng -y && sudo apt install git -y`
+Install Anaconda 3 for Linux: https://www.anaconda.com/products/individual#linux
+`conda create --name securityssidabi37 python=3.7`
+`git clone https://github.com/GISDev01/security-ssid-abi.git`
+`cd security-ssid-abi`
+`source activate securityssidabi37`
+`pip install -r requirements.txt`
 
-        `git clone https://github.com/GISDev01/security-ssid-abi.git`
-        `cd security-ssid-abi`
-        `pip3 install -r requirements.txt`
-        (Note: Ideally you'd be using conda or virtual environments, but this will do if you're just using this VM for this project)
 
-        `sudo airmon-ng check kill`
-        `iwconfig`
-        (check what your wireless NIC device is called using iwconfig (make sure your USB wireless NIC, such as an Alfa AWUS036NHA is passed-through to the VM)
-        Example value is something like: wlx00c022ca92321337a (or it could be something like wlan0)
-        `sudo airmon-ng start wlx00c022ca92321337a`
+`sudo airmon-ng check kill`
+`iwconfig`
+(check what your wireless NIC device is called using iwconfig
+(make sure your USB wireless NIC, such as an Alfa AWUS036 is passed-through to the VM)
+Example value is something like: wlx00c022ca92321337a (or it could be something like wlan0)
+`sudo airmon-ng start wlx00c022ca92321337a`
 
 4. Get InfluxDB up and running, and update the .\security_ssid\settings.py with the correct IP or hostname of the InfluxDB box.
 Note: Fastest way to get it up and running for development is with Docker:
