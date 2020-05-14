@@ -1,5 +1,6 @@
 import binascii
 
+import pytz
 from django.core.exceptions import *
 
 # for mdns/bonjour name parsing
@@ -156,7 +157,7 @@ def get_manuf(mac_addr):
 
 
 def create_or_update_client(mac_addr, utc, name=None):
-    utc = utc.localize(utc)
+    utc = pytz.UTC.localize(utc)
     logger.debug('Create or update client for mac addr.: ' + str(mac_addr))
     try:
         _client = Client.objects.get(mac=mac_addr)
@@ -198,7 +199,7 @@ def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
         except ObjectDoesNotExist:
             access_pt = AP(BSSID=BSSID, lastprobed_date=utc_pkt_time, manufacturer=get_manuf(BSSID))
 
-    if access_pt.lastprobed_date and access_pt.lastprobed_date < utc.localize(utc_pkt_time):
+    if access_pt.lastprobed_date and access_pt.lastprobed_date < pytz.UTC.localize(utc_pkt_time):
         access_pt.lastprobed_date = utc_pkt_time
 
     # avoid ValueError: 'AP' instance needs to have a primary key value before a many-to-many relationship can be used.
