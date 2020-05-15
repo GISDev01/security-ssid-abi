@@ -28,7 +28,6 @@ interface = "mon0"
 
 
 def filter_and_send_packet(pkt):
-    logger.debug(pkt)
     global total_pkt_count
     total_pkt_count += 1
 
