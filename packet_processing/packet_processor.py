@@ -2,6 +2,7 @@ import binascii
 
 import pytz
 from django.core.exceptions import *
+from django.utils import timezone
 
 # for mdns/bonjour name parsing
 from django.utils.timezone import is_naive
@@ -157,7 +158,8 @@ def get_manuf(mac_addr):
 
 
 def create_or_update_client(mac_addr, utc, name=None):
-    utc = time.localtime(utc)
+    utc = timezone.localtime(utc)
+
     logger.debug('Create or update client for mac addr.: {}'.format(mac_addr))
     logger.debug('UTC Is Naive: {}'.format(utc.isNaive()))
 
@@ -192,15 +194,10 @@ def ascii_printable(s):
 
 def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
     # local_pkt_time = datetime.utcfromtimestamp(pkt_time)
-    local_pkt_time = time.localtime(pkt_time)
-    # time.localtime(utc)
+    local_pkt_time = timezone.localtime(pkt_time)
 
     logger.info('Local Pkt Time: {}'.format(local_pkt_time))
     logger.info('Local Pkt Time Naive: {}'.format(is_naive(local_pkt_time)))
-
-    # INFO:packet_processing.packet_processor:Local Pkt Time: 2020-05-15 22:29:48.960420
-    # INFO:packet_processing.packet_processor:Local Pkt Time Naive: True
-
 
     if SSID:
         try:
