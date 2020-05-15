@@ -4,6 +4,7 @@ import pytz
 from django.core.exceptions import *
 
 # for mdns/bonjour name parsing
+from django.utils.timezone import is_naive
 from dnslib import DNSRecord
 from netaddr import EUI
 from pytz import utc
@@ -116,7 +117,6 @@ def ingest_ARP_packet(arp_pkt):
 
 def ingest_mdns_packet(mdns_pkt):
     logger.info('Packet with Dot11, UDP, and Apple mDNS')
-    logger.debug(mdns_pkt.summary())
 
     # only parse MDNS names for 802.11 layer sniffing for now, easy to see what's a request from a client
     for mdns_pkt in mdns_pkt:
@@ -157,11 +157,13 @@ def get_manuf(mac_addr):
 
 
 def create_or_update_client(mac_addr, utc, name=None):
-    utc = pytz.timezone("America/New_York").localize(utc)
-    logger.debug('Create or update client for mac addr.: ' + str(mac_addr))
+    logger.debug('Create or update client for mac addr.: {}'.format(mac_addr))
+    logger.debug('UTC Is Naive: {}'.format(utc.isNaive()))
 
     try:
         _client = Client.objects.get(mac=mac_addr)
+        logger.debug('_client.lastseen_date Is Naive: {}'.format(_client.lastseen_date.isNaive()))
+        logger.debug('_client.lastseen_date: {}'.format(_client.lastseen_date))
 
         # Check if the client device has been seen previously, and if so, update the last seen time to now
         if _client.lastseen_date < utc:
@@ -188,7 +190,9 @@ def ascii_printable(s):
 
 
 def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
-    local_pkt_time = pytz.timezone("America/New_York").localize(datetime.utcfromtimestamp(pkt_time))
+    local_pkt_time = datetime.utcfromtimestamp(pkt_time)
+    logger.info('Local Pkt Time: {}'.format(local_pkt_time))
+    logger.info('Local Pkt Time Naive: {}'.format(is_naive(local_pkt_time)))
 
     if SSID:
         try:
