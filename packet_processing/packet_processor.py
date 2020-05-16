@@ -7,9 +7,10 @@ from scapy.all import *
 from scapy.layers.dot11 import Dot11, Dot11Elt
 from scapy.layers.l2 import ARP, Ether
 
-import settings
+from security_ssid import settings
 from db import influx
 from mac_parser import manuf
+
 from security_ssid.models import AP, Client
 
 logger = logging.getLogger(__name__)
