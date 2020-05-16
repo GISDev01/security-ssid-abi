@@ -18,7 +18,7 @@ parser.add_argument('-r', dest='pcap', action='store', help='pcap file to read')
 parser.add_argument('-i', dest='interface', action='store', default='mon0', help='interface to sniff (default mon0)')
 args = parser.parse_args()
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # count of scapy packets received
@@ -66,6 +66,6 @@ else:
 logger.info('Summary of devices detected:')
 
 for mac in client:
-    logger.info('{} [{}] probed for {}'.format(get_manuf(mac),
-                                               mac,
-                                               ', '.join(map(ascii_printable([mac])))))
+    logger.info('%s [%s] probed for %s' % (get_manuf(mac),
+                                     mac,
+                                     ', '.join(map(ascii_printable, client[mac]))))
