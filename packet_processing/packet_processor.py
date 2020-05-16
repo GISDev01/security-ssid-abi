@@ -1,80 +1,91 @@
 import binascii
 
-import pytz
 from django.core.exceptions import *
-from django.utils import timezone
-
-# for mdns/bonjour name parsing
-from django.utils.timezone import is_naive
 from dnslib import DNSRecord
 from netaddr import EUI
-from pytz import utc
-
 from scapy.all import *
-from scapy.layers.dot11 import Dot11Elt, Dot11
+from scapy.layers.dot11 import Dot11, Dot11Elt
 from scapy.layers.l2 import ARP, Ether
 
+import settings
 from db import influx
 from mac_parser import manuf
-
-from security_ssid.models import Client, AP
+from security_ssid.models import AP, Client
 
 logger = logging.getLogger(__name__)
 client = defaultdict(list)
 mac_parser_ws = manuf.MacParser()
 
 
-def ingest_dot11_probe_req_packet(probe_pkt):
+def ingest_dot11_probe_req_packet(dot11_probe_pkt):
     # Transform beacon packet and insert into InfluxDB in realtime
     # if pkt.type == 0 and pkt.subtype == 4:  # mgmt, probe request
     logger.debug('Dot11 Probe Req found')
-    client_mac = probe_pkt.getlayer(Dot11).addr2
+    client_mac = dot11_probe_pkt.getlayer(Dot11).addr2
 
     # if pkt.haslayer(Dot11Elt) and pkt.info:
     #     probed_ssid = pkt.info.decode('utf8')
     #     print 'Main Packet SSID: ' + probed_ssid
 
-    if probe_pkt.haslayer(Dot11Elt) and probe_pkt.info:
+    if dot11_probe_pkt.haslayer(Dot11Elt) and dot11_probe_pkt.info:
+        logger.debug("Dot11 ELT With Info")
         try:
-            probed_ssid = probe_pkt.info.decode('utf8')
+            probed_ssid = dot11_probe_pkt.info.decode('utf8')
+            logger.debug("Probed SSID: {}".format(probed_ssid))
+
         except UnicodeDecodeError:
-            probed_ssid = 'HEX:%s' % binascii.hexlify(probe_pkt.info)
+            probed_ssid = 'HEX:%s' % binascii.hexlify(dot11_probe_pkt.info)
             logger.info('%s [%s] probed for non-UTF8 SSID (%s bytes, converted to "%s")' % (
-                get_manuf(client_mac), client_mac, len(probe_pkt.info), probed_ssid))
+                get_manuf(client_mac), client_mac, len(dot11_probe_pkt.info), probed_ssid))
         if len(probed_ssid) > 0 and probed_ssid not in client[client_mac]:
+            logger.debug("client[client_mac]: {}".format(client[client_mac]))
+
             client[client_mac].append(probed_ssid)
+
             # unicode goes in DB for browser display
-            update_summary_database(client_mac=client_mac, pkt_time=probe_pkt.time, SSID=probed_ssid)
+            update_summary_database(client_mac=client_mac, pkt_time=dot11_probe_pkt.time, SSID=probed_ssid)
 
         if len(probed_ssid) > 0:
-            if probe_pkt.notdecoded is not None:
-                # The location of the RSSI strength is dependent on the physical NIC
-                # Alfa AWUS 036N
-                # client_signal_strength = -(256 - ord(probe_pkt.notdecoded[-4:-3]))
+            if "notdecoded" in dot11_probe_pkt:
+                if dot11_probe_pkt.notdecoded is not None:
+                    # The location of the RSSI strength is dependent on the physical NIC
+                    # Alfa AWUS 036N
+                    # client_signal_strength = -(256 - ord(probe_pkt.notdecoded[-4:-3]))
+                    logger.debug("Getting Signal Strength")
+                    logger.debug(dot11_probe_pkt.notdecoded)
+                    # Alfa AWUS 036NHA (Atheros AR9271)
+                    client_signal_strength = -(256 - ord(dot11_probe_pkt.notdecoded[-2:-1]))
 
-                # Alfa AWUS 036NHA (Atheros AR9271)
-                client_signal_strength = -(256 - ord(probe_pkt.notdecoded[-2:-1]))
+                else:
+                    client_signal_strength = -100
+                    logger.debug("No client signal strength found")
 
             else:
                 client_signal_strength = -100
-                logger.debug("No client signal strength found")
+                logger.debug("NOTDECODED missing from packet, so no strength found")
 
-            # ascii only for console print
-            logger.info("%s [%s] probeReq for %s, signal strength: %s" % (
-                get_manuf(client_mac), client_mac, ascii_printable(probed_ssid), client_signal_strength))
+            logger.info("%s [%s] probeReq for %s, "
+                        "signal strength: %s" % (
+                            get_manuf(client_mac),
+                            client_mac,
+                            ascii_printable(probed_ssid),
+                            client_signal_strength))
+
             send_client_data_to_influxdb(client_mac,
-                                         probe_pkt.time,
+                                         dot11_probe_pkt.time,
                                          client_signal_strength,
                                          ascii_printable(probed_ssid))
+
     else:
         logger.debug('Dot11Elt and info missing from sub packet in Dot11ProbeReq')
 
 
 def ingest_ARP_packet(arp_pkt):
-    logger.info('ARP packet detected.')
+    logger.debug('ARP packet detected.')
+
     arp = arp_pkt.getlayer(ARP)
     dot11 = arp_pkt.getlayer(Dot11)
-    mode = ''
+
     try:
         # On wifi, BSSID (mac) of AP (Access Point) that the client is currently connected to
         target_ap_bssid = dot11.addr1
@@ -92,9 +103,9 @@ def ingest_ARP_packet(arp_pkt):
                  target_mac, target_ap_bssid)
                 update_summary_database(client_mac=source_client_mac, pkt_time=arp_pkt.time, BSSID=target_mac)
             else:
-                logger.debug('Skipping ARP packet Code 1')
+                logger.debug('Skipping ARP packet. Code 1')
         else:
-            logger.debug('Skipping ARP packet Code 2')
+            logger.debug('Skipping ARP packet. Code 2')
 
     except:
         try:
@@ -110,14 +121,16 @@ def ingest_ARP_packet(arp_pkt):
                     (get_manuf(source_client_mac), source_client_mac, arp.pdst, arp.psrc,
                      get_manuf(target_mac), target_mac)
                     update_summary_database(client_mac=source_client_mac, pkt_time=arp_pkt.time, BSSID=target_mac)
+
             else:
                 logger.info('Skipping ARP Ether packet. Code 3')
+
         except IndexError:
             pass
 
 
 def ingest_mdns_packet(mdns_pkt):
-    logger.info('Packet with Dot11, UDP, and Apple mDNS')
+    logger.debug('Packet with Dot11, UDP, and Apple mDNS')
 
     # only parse MDNS names for 802.11 layer sniffing for now, easy to see what's a request from a client
     for mdns_pkt in mdns_pkt:
@@ -137,6 +150,7 @@ def ingest_mdns_packet(mdns_pkt):
                             # UDP port 5353
                             if src != '01:00:5e:00:00:fb':
                                 create_or_update_client(src, datetime.utcfromtimestamp(mdns_pkt.time), name)
+
                         except AttributeError:
                             logger.error('Error parsing MDNS packet')
             except IndexError:
@@ -157,31 +171,24 @@ def get_manuf(mac_addr):
     return ascii_printable(calced_manufacturer)
 
 
-def create_or_update_client(mac_addr, utc, name=None):
-    utc = timezone.localtime(utc)
-
-    logger.debug('Create or update client for mac addr.: {}'.format(mac_addr))
-    logger.debug('UTC Is Naive: {}'.format(utc.isNaive()))
-
+def create_or_update_client(mac_addr, pkt_utc_time, name=None):
     try:
         _client = Client.objects.get(mac=mac_addr)
-        logger.debug('_client.lastseen_date Is Naive: {}'.format(_client.lastseen_date.isNaive()))
-        logger.debug('_client.lastseen_date: {}'.format(_client.lastseen_date))
 
         # Check if the client device has been seen previously, and if so, update the last seen time to now
-        if _client.lastseen_date < utc:
-            logger.debug('Updating client last seen date')
-            _client.lastseen_date = utc
+        if _client.lastseen_date < pkt_utc_time:
+            _client.lastseen_date = pkt_utc_time
 
-    # if the client doesn't already exist, we create a new Client to represent this mobile device
+    # If the client doesn't already exist, we create a new Client to represent this device
     except ObjectDoesNotExist:
-        logger.debug('Creating new client')
-        _client = Client(mac=mac_addr, lastseen_date=utc, manufacturer=get_manuf(mac_addr))
+        logger.debug('Creating a new client with mac address: {}'.format(mac_addr))
+        _client = Client(mac=mac_addr, lastseen_date=pkt_utc_time, manufacturer=get_manuf(mac_addr))
 
     if name:
         _client.name = name
         logger.info('Updated name of %s to %s' % (_client, _client.name))
     _client.save()
+
     return _client
 
 
@@ -193,11 +200,7 @@ def ascii_printable(s):
 
 
 def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
-    # local_pkt_time = datetime.utcfromtimestamp(pkt_time)
-    local_pkt_time = timezone.localtime(pkt_time)
-
-    logger.info('Local Pkt Time: {}'.format(local_pkt_time))
-    logger.info('Local Pkt Time Naive: {}'.format(is_naive(local_pkt_time)))
+    local_pkt_time = datetime.utcfromtimestamp(pkt_time)
 
     if SSID:
         try:
@@ -214,28 +217,13 @@ def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
     if access_pt.lastprobed_date and access_pt.lastprobed_date < local_pkt_time:
         access_pt.lastprobed_date = local_pkt_time
 
-    # avoid ValueError: 'AP' instance needs to have a primary key value before a many-to-many relationship can be used.
-    access_pt.save()
-
-    access_pt.client.add(create_or_update_client(client_mac, local_pkt_time))
-    access_pt.save()
-
-
-def sniff_wifi_access_points(pkt):
-    if pkt.haslayer(Dot11):
-        # Packet Type 0 and Subtype of Binary 1000 (decimal 8) is a Management-Beacon packet
-        if pkt.type == 0 and pkt.subtype == 8:
-            logger.info("Management Beacon Packet: Access Point MAC: %s with SSID: %s " % (pkt.addr2, pkt.info))
-            # addr1 is usually ff:ff:ff:ff:ff:ff
-            logger.info(pkt.addr1)
-
 
 def send_client_data_to_influxdb(client_mac_addr, pkt_time, client_sig_rssi, probed_ssid_name):
-    # Send client mac address, time of observation, and signal strength to influxDB measurement (table)
-    influx_formatted_data = influx.assemble_json(measurement='clientdevices',
+    influx_formatted_data = influx.assemble_json(measurement=settings.INFLUX_DB_MEASUREMENT_NAME,
                                                  pkt_timestamp=pkt_time,
                                                  rssi_value=client_sig_rssi,
                                                  client_mac_addr=client_mac_addr,
                                                  probed_ssid=probed_ssid_name)
     influx.write_data(influx_formatted_data)
-    logger.debug('Client data sent to influxdb')
+
+    logger.debug('{} Client data sent to influxdb'.format(client_mac_addr))
