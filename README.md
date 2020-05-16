@@ -10,7 +10,9 @@ Components
 
 2 major components and further python modules:
 
-* main.py uses [Scapy](http://www.secdev.org/projects/scapy/) to extract data from a live capture or pcap file, and inserts it into a database.
+* main.py uses [Scapy](http://www.secdev.org/projects/scapy/) to extract data from a live capture (via airmon-ng) or pcap file, and inserts this data into 2 databases: Client Summary data is loaded into a local mysql DB (managed by Django), which is the data that is displayed in the Djanga web app.
+
+ Beyond the summary Client Data, all 802.11 (aka Dot11) packet summaries are loaded into a second database: InfluxDB 1.8.
 
 * A Django web app provides an interface to view and analyse the data.
 This includes views of:
@@ -60,7 +62,6 @@ Bring up a wifi interface in monitor mode (usually mon0) so that airodump-ng sho
 Steps to get this running on a Ubuntu 16.04.6 Box
 Install Anaconda 3 for Linux: https://www.anaconda.com/products/individual#linux
 
-
 `sudo apt install aircrack-ng -y && sudo apt install git -y`
 
 `conda create --name securityssidabi37 python=3.7`
@@ -99,6 +100,13 @@ Note: Fastest way to get it up and running for development is with Docker:
 Optional: To solicit ARPs from iOS devices, set up an access point with DHCP disabled (e.g. using airbase-ng) and configure your sniffing interface to the same channel.
 Once associated, iOS devices will send up to three ARPs destined for the MAC address of the DHCP server on previously joined networks. On typical home WiFi routers, the DHCP server MAC address is the same as the WiFi interface MAC address, which can be used for accurate geolocation.
 
+Optional: For debuggin code locally, a .pcap (in this case, .cap) file can be generated with (as root or with sudo):
+
+`airodump-ng -w sample-data --output-format pcap mon0`
+
+Then you can run with (assuming sample-data.cap is in the root of this repo:
+
+`./run.sh -r sample-data.cap`
 
 Dependencies
 ------------
