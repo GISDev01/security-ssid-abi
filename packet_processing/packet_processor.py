@@ -19,17 +19,10 @@ mac_parser_ws = manuf.MacParser()
 
 
 def ingest_dot11_probe_req_packet(dot11_probe_pkt):
-    # Transform beacon packet and insert into InfluxDB in realtime
-    # if pkt.type == 0 and pkt.subtype == 4:  # mgmt, probe request
     logger.debug('Dot11 Probe Req found')
     client_mac = dot11_probe_pkt.getlayer(Dot11).addr2
 
-    # if pkt.haslayer(Dot11Elt) and pkt.info:
-    #     probed_ssid = pkt.info.decode('utf8')
-    #     print 'Main Packet SSID: ' + probed_ssid
-
     if dot11_probe_pkt.haslayer(Dot11Elt) and dot11_probe_pkt.info:
-        logger.debug("Dot11 ELT With Info")
         try:
             probed_ssid = dot11_probe_pkt.info.decode('utf8')
             logger.debug("Probed SSID: {}".format(probed_ssid))
@@ -40,32 +33,11 @@ def ingest_dot11_probe_req_packet(dot11_probe_pkt):
                 get_manuf(client_mac), client_mac, len(dot11_probe_pkt.info), probed_ssid))
 
         if len(probed_ssid) > 0 and probed_ssid not in client_to_ssid_list[client_mac]:
-            logger.debug("Probed SSID: {}".format(probed_ssid))
-
             client_to_ssid_list[client_mac].append(probed_ssid)
-            logger.debug("wifi_client_device_list: {}".format(client_to_ssid_list))
-
-            # unicode goes in DB for browser display
             update_summary_database(client_mac=client_mac, pkt_time=dot11_probe_pkt.time, SSID=probed_ssid)
 
         if len(probed_ssid) > 0:
-            if "notdecoded" in dot11_probe_pkt:
-                if dot11_probe_pkt.notdecoded is not None:
-                    # The location of the RSSI strength is dependent on the physical NIC
-                    # Alfa AWUS 036N
-                    # client_signal_strength = -(256 - ord(probe_pkt.notdecoded[-4:-3]))
-                    logger.debug("Getting Signal Strength")
-                    logger.debug(dot11_probe_pkt.notdecoded)
-                    # Alfa AWUS 036NHA (Atheros AR9271)
-                    client_signal_strength = -(256 - ord(dot11_probe_pkt.notdecoded[-2:-1]))
-
-                else:
-                    client_signal_strength = -100
-                    logger.debug("No client signal strength found")
-
-            else:
-                client_signal_strength = -100
-                logger.debug("NOTDECODED missing from packet, so no strength found")
+            client_signal_strength = try_to_parse_rssi_from_packet(dot11_probe_pkt)
 
             logger.info("%s [%s] probeReq for %s, "
                         "signal strength: %s" % (
@@ -81,6 +53,28 @@ def ingest_dot11_probe_req_packet(dot11_probe_pkt):
 
     else:
         logger.debug('Dot11Elt and info missing from sub packet in Dot11ProbeReq')
+
+
+def try_to_parse_rssi_from_packet(dot11_probe_pkt):
+    if "notdecoded" in dot11_probe_pkt:
+        if dot11_probe_pkt.notdecoded is not None:
+            # The location of the RSSI strength is dependent on the physical NIC
+            # Alfa AWUS 036N
+            # client_signal_strength = -(256 - ord(probe_pkt.notdecoded[-4:-3]))
+            logger.debug("Getting Signal Strength")
+            logger.debug(dot11_probe_pkt.notdecoded)
+            # Alfa AWUS 036NHA (Atheros AR9271)
+            client_signal_strength = -(256 - ord(dot11_probe_pkt.notdecoded[-2:-1]))
+
+        else:
+            client_signal_strength = -100
+            logger.debug("No client signal strength found in 'notdecoded' segment")
+
+    else:
+        client_signal_strength = -100
+        logger.debug("NOTDECODED missing from packet, so no strength found")
+
+    return client_signal_strength
 
 
 def ingest_ARP_packet(arp_pkt):
