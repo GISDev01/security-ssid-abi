@@ -10,7 +10,7 @@ from scapy.layers.l2 import ARP
 django.setup()
 
 from packet_processing import packet_processor
-from packet_processing.packet_processor import client, get_manuf, ascii_printable
+from packet_processing.packet_processor import client_to_ssid_list, get_manuf, ascii_printable
 
 
 parser = argparse.ArgumentParser(description='WiFi Passive Server')
@@ -65,7 +65,7 @@ else:
 
 logger.info('Summary of devices detected:')
 
-for mac in client:
+for mac in client_to_ssid_list:
     logger.info('%s [%s] probed for %s' % (get_manuf(mac),
                                      mac,
-                                     ', '.join(map(ascii_printable, client[mac]))))
+                                     ', '.join(map(ascii_printable, client_to_ssid_list[mac]))))
