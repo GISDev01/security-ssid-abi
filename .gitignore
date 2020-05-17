@@ -18,4 +18,4 @@ security_ssid/wloc.pyc
 security_ssid/wsgi.pyc
 wigle_lib.pyc
 /monitor_results.sqlite3
-mac_parser/manuf
+sample-data.cap

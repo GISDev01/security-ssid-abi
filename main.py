@@ -1,15 +1,17 @@
 import argparse
 
 import django
+
 from scapy.all import *
 from scapy.layers.dot11 import Dot11, Dot11AssoReq, Dot11AssoResp, Dot11ProbeReq, Dot11ReassoReq, Dot11ReassoResp
 from scapy.layers.inet import UDP
 from scapy.layers.l2 import ARP
 
-from packet_processing import packet_processor
-from packet_processing.packet_processor import client, get_manuf, ascii_printable
-
 django.setup()
+
+from packet_processing import packet_processor
+from packet_processing.packet_processor import client_to_ssid_list, get_manuf, ascii_printable
+
 
 parser = argparse.ArgumentParser(description='WiFi Passive Server')
 parser.add_argument('-r', dest='pcap', action='store', help='pcap file to read')
@@ -63,7 +65,7 @@ else:
 
 logger.info('Summary of devices detected:')
 
-for mac in client:
-    logger.info('{} [{}] probed for {}'.format(get_manuf(mac),
-                                               mac,
-                                               ', '.join(map(ascii_printable([mac])))))
+for mac in client_to_ssid_list:
+    logger.info('%s [%s] probed for %s' % (get_manuf(mac),
+                                     mac,
+                                     ', '.join(map(ascii_printable, client_to_ssid_list[mac]))))

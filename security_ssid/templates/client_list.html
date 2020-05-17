@@ -20,16 +20,15 @@
             <th width="15%">Last detected</th>
         </tr>
         </thead>
-        {% for c in object_list %}
+        {% for client in object_list %}
             <tr class="{% cycle '' 'alt' %}">
-                <td><a href="{% url "client" c.mac %}">{{ c.mac }}</a>{% if c.name %}<br>{{ c.name }}{% endif %}</td>
-                <td>{{ c.manufacturer }}</td>
-                <td>{% for ap in probedict|key:c %}
-                    {{ ap|safe }}{% if probedict|key:c|length > 1 and forloop.last == False %};{% endif %}
-                    &nbsp;
+                <td><a href="{% url "client" client.mac %}">{{ client.mac }}</a>{% if client.name %}<br>{{ client.name }}{% endif %}</td>
+                <td>{{ client.manufacturer }}</td>
+                <td>{% for ap in probedict|key:client %}
+                    {{ ap.SSID|safe }}{% if probedict|key:client|length > 1 and forloop.last == False %};{% endif %}
                 {% endfor %}
                 </td>
-                <td>{{ c.lastseen_date }}</td>
+                <td>{{ client.lastseen_date }}</td>
             </tr>
         {% endfor %}
     </table>
