@@ -32,6 +32,8 @@ def ingest_dot11_probe_req_packet(dot11_probe_pkt):
             logger.info('%s [%s] probed for non-UTF8 SSID (%s bytes, converted to "%s")' % (
                 get_manuf(client_mac), client_mac, len(dot11_probe_pkt.info), probed_ssid))
 
+        probed_ssid = remove_null_char_for_postgres(probed_ssid)
+
         if len(probed_ssid) > 0 and probed_ssid not in client_to_ssid_list[client_mac]:
             client_to_ssid_list[client_mac].append(probed_ssid)
             update_summary_database(client_mac=client_mac, pkt_time=dot11_probe_pkt.time, SSID=probed_ssid)
@@ -198,6 +200,9 @@ def ascii_printable(s):
     else:
         return ''
 
+
+def remove_null_char_for_postgres(string_to_sanitize):
+    return string_to_sanitize.replace('\x00', '')
 
 def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
     utc_pkt_time = datetime.utcfromtimestamp(pkt_time)
