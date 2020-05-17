@@ -6,7 +6,8 @@ from picklefield.fields import PickledObjectField
 
 class Client(models.Model):
     mac = models.CharField(max_length=len('ff:ff:ff:ff:ff:ff'), unique=True)
-    lastseen_date = models.DateTimeField('date last seen')
+    firstseen_date = models.DateTimeField('UTC Datetime first seen')
+    lastseen_date = models.DateTimeField('UTC Datetime last seen')
     name = models.CharField(max_length=200, blank=True)
     comment = models.CharField(max_length=200, blank=True)
     manufacturer = models.CharField(max_length=200, blank=True)
@@ -18,6 +19,7 @@ class Client(models.Model):
         app_label = 'security_ssid'
 
 
+# Access Point
 class AP(models.Model):
     client = models.ManyToManyField(Client)
     SSID = models.CharField(max_length=200, blank=True)
@@ -25,7 +27,8 @@ class AP(models.Model):
     name = models.CharField(max_length=200, blank=True)
     comment = models.CharField(max_length=200, blank=True)
     manufacturer = models.CharField(max_length=200, blank=True)
-    lastprobed_date = models.DateTimeField('UTC DateTime last probed for')
+    firstprobed_date = models.DateTimeField('UTC Datetime first probed for')
+    lastprobed_date = models.DateTimeField('UTC Datetime last probed for')
     lon = models.FloatField(null=True)
     lat = models.FloatField(null=True)
     address = models.CharField(max_length=200, blank=True)
@@ -43,7 +46,7 @@ class AP(models.Model):
 
 class PointDB(models.Model):
     name = models.CharField(max_length=200, unique=True)
-    date_saved = models.DateTimeField('date saved', default=datetime.now)
+    date_saved = models.DateTimeField('Datetime saved', default=datetime.now)
     pointdict = PickledObjectField()
 
     class Meta:
