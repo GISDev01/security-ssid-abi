@@ -7,14 +7,14 @@ from scapy.all import *
 from scapy.layers.dot11 import Dot11, Dot11Elt
 from scapy.layers.l2 import ARP, Ether
 
-from security_ssid import settings
 from db import influx
 from mac_parser import manuf
-
+from security_ssid import settings
 from security_ssid.models import AP, Client
 
 logger = logging.getLogger(__name__)
-client = defaultdict(list)
+
+client_to_ssid_list = defaultdict(list)
 mac_parser_ws = manuf.MacParser()
 
 
@@ -38,10 +38,12 @@ def ingest_dot11_probe_req_packet(dot11_probe_pkt):
             probed_ssid = 'HEX:%s' % binascii.hexlify(dot11_probe_pkt.info)
             logger.info('%s [%s] probed for non-UTF8 SSID (%s bytes, converted to "%s")' % (
                 get_manuf(client_mac), client_mac, len(dot11_probe_pkt.info), probed_ssid))
-        if len(probed_ssid) > 0 and probed_ssid not in client[client_mac]:
-            logger.debug("client[client_mac]: {}".format(client[client_mac]))
 
-            client[client_mac].append(probed_ssid)
+        if len(probed_ssid) > 0 and probed_ssid not in client_to_ssid_list[client_mac]:
+            logger.debug("Probed SSID: {}".format(probed_ssid))
+
+            client_to_ssid_list[client_mac].append(probed_ssid)
+            logger.debug("wifi_client_device_list: {}".format(client_to_ssid_list))
 
             # unicode goes in DB for browser display
             update_summary_database(client_mac=client_mac, pkt_time=dot11_probe_pkt.time, SSID=probed_ssid)
@@ -182,12 +184,12 @@ def create_or_update_client(mac_addr, pkt_utc_time, name=None):
 
     # If the client doesn't already exist, we create a new Client to represent this device
     except ObjectDoesNotExist:
-        logger.debug('Creating a new client with mac address: {}'.format(mac_addr))
         _client = Client(mac=mac_addr, lastseen_date=pkt_utc_time, manufacturer=get_manuf(mac_addr))
 
     if name:
         _client.name = name
-        logger.info('Updated name of %s to %s' % (_client, _client.name))
+        logger.debug('Updated name of %s to %s' % (_client, _client.name))
+
     _client.save()
 
     return _client
@@ -201,22 +203,32 @@ def ascii_printable(s):
 
 
 def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
-    local_pkt_time = datetime.utcfromtimestamp(pkt_time)
+    utc_pkt_time = datetime.utcfromtimestamp(pkt_time)
 
     if SSID:
         try:
             access_pt = AP.objects.get(SSID=SSID)
+
         except ObjectDoesNotExist:
-            access_pt = AP(SSID=SSID, lastprobed_date=local_pkt_time, manufacturer='Unknown')
+            access_pt = AP(SSID=SSID, lastprobed_date=utc_pkt_time, manufacturer='Unknown')
 
     elif BSSID:
         try:
             access_pt = AP.objects.get(BSSID=BSSID)
         except ObjectDoesNotExist:
-            access_pt = AP(BSSID=BSSID, lastprobed_date=local_pkt_time, manufacturer=get_manuf(BSSID))
+            access_pt = AP(BSSID=BSSID, lastprobed_date=utc_pkt_time, manufacturer=get_manuf(BSSID))
 
-    if access_pt.lastprobed_date and access_pt.lastprobed_date < local_pkt_time:
-        access_pt.lastprobed_date = local_pkt_time
+
+    if access_pt.lastprobed_date and access_pt.lastprobed_date < utc_pkt_time:
+        logger.debug('Updating Last Probed date to: {}'.format(utc_pkt_time))
+        access_pt.lastprobed_date = utc_pkt_time
+
+        # avoid ValueError: 'AP' instance needs to have a primary key
+        # value before a many-to-many relationship can be used.
+    access_pt.save()
+
+    access_pt.client.add(create_or_update_client(client_mac, utc_pkt_time))
+    access_pt.save()
 
 
 def send_client_data_to_influxdb(client_mac_addr, pkt_time, client_sig_rssi, probed_ssid_name):
