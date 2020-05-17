@@ -184,11 +184,14 @@ def create_or_update_client(mac_addr, pkt_utc_time, name=None):
 
     # If the client doesn't already exist, we create a new Client to represent this device
     except ObjectDoesNotExist:
-        _client = Client(mac=mac_addr, lastseen_date=pkt_utc_time, manufacturer=get_manuf(mac_addr))
+        _client = Client(mac=mac_addr,
+                         firstseen_date=pkt_utc_time,
+                         lastseen_date=pkt_utc_time,
+                         manufacturer=get_manuf(mac_addr))
 
     if name:
         _client.name = name
-        logger.debug('Updated name of %s to %s' % (_client, _client.name))
+        logger.debug('Updated Client name of {} to {}'.format(_client, _client.name))
 
     _client.save()
 
@@ -209,22 +212,30 @@ def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
         try:
             access_pt = AP.objects.get(SSID=SSID)
 
+        # Create new Access Point
         except ObjectDoesNotExist:
-            access_pt = AP(SSID=SSID, lastprobed_date=utc_pkt_time, manufacturer='Unknown')
+            access_pt = AP(SSID=SSID,
+                           firstprobed_date=utc_pkt_time,
+                           lastprobed_date=utc_pkt_time,
+                           manufacturer='Unknown')
 
     elif BSSID:
         try:
             access_pt = AP.objects.get(BSSID=BSSID)
-        except ObjectDoesNotExist:
-            access_pt = AP(BSSID=BSSID, lastprobed_date=utc_pkt_time, manufacturer=get_manuf(BSSID))
 
+        # Create new Access Point
+        except ObjectDoesNotExist:
+            access_pt = AP(BSSID=BSSID,
+                           firstprobed_date=utc_pkt_time,
+                           lastprobed_date=utc_pkt_time,
+                           manufacturer=get_manuf(BSSID))
 
     if access_pt.lastprobed_date and access_pt.lastprobed_date < utc_pkt_time:
-        logger.debug('Updating Last Probed date to: {}'.format(utc_pkt_time))
+        logger.debug('Updating Access Point Last Probed date to: {}'.format(utc_pkt_time))
         access_pt.lastprobed_date = utc_pkt_time
 
-        # avoid ValueError: 'AP' instance needs to have a primary key
-        # value before a many-to-many relationship can be used.
+    # Save here first, to avoid ValueError: 'AP' instance needs to have a primary key
+    # value before a many-to-many relationship can be used.
     access_pt.save()
 
     access_pt.client.add(create_or_update_client(client_mac, utc_pkt_time))
