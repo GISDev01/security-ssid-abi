@@ -25,7 +25,7 @@ class AP(models.Model):
     name = models.CharField(max_length=200, blank=True)
     comment = models.CharField(max_length=200, blank=True)
     manufacturer = models.CharField(max_length=200, blank=True)
-    lastprobed_date = models.DateTimeField('date last probed for')
+    lastprobed_date = models.DateTimeField('UTC DateTime last probed for')
     lon = models.FloatField(null=True)
     lat = models.FloatField(null=True)
     address = models.CharField(max_length=200, blank=True)
