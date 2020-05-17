@@ -78,20 +78,20 @@ WSGI_APPLICATION = 'security_ssid.wsgi.application'
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    # }
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        # postgres exists by default, if you change this to a real DB name, the DB will
-        # need to be created manually
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': DJANGO_DB_HOST,
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     # postgres exists by default, if you change this to a real DB name, the DB will
+    #     # need to be created manually
+    #     'NAME': 'postgres',
+    #     'USER': 'postgres',
+    #     'PASSWORD': 'postgres',
+    #     'HOST': DJANGO_DB_HOST,
+    #     'PORT': '5432',
+    # }
 }
 
 # Password validation
