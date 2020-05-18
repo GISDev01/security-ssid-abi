@@ -5,6 +5,7 @@ from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import *
+
 from netaddr import EUI
 
 from location_utils import wigle_query, wloc
@@ -123,20 +124,19 @@ def getCenter(apdict):
 
 
 def AppleWloc(request, bssid=None):
-    return HttpResponse('This is currently disabled.')
-
     if not bssid:
         print("Setting to Default BSSID")
         bssid = '00:1e:52:7a:ae:ad'
 
-    print('Got request for %s' % bssid)
+    print('Apple WLOC request for BSSID: {}'.format(bssid))
 
     if request.GET.get('ajax'):
         template = 'apple-wloc-ajax.js'
     else:
         template = 'apple-wloc.html'
         request.session['apdict'] = {}
-        request.session['apset'] = []  # reset server-side cache of unique bssids if we load page normally
+        # Reset server-side cache of unique bssids if we load page normally
+        request.session['apset'] = []
 
     bssid = bssid.lower()
     apdict = wloc.QueryBSSID(bssid)
@@ -146,7 +146,7 @@ def AppleWloc(request, bssid=None):
         if ap in request.session['apset']:
             dupes += 1
             del apdict[ap]
-        request.session['apset'].add(ap)
+        request.session['apset'].append(ap)
 
     numresults = len(apdict)
 
@@ -155,10 +155,10 @@ def AppleWloc(request, bssid=None):
     print('%s returned to browser post filter' % numresults)
 
     if numresults == 0 or (-180.0, -180.0) in apdict.values():
-        print('0 results.')
-        return HttpResponse('0 results.')
+        print('0 WLOC results.')
+        return HttpResponse('No valid WLOC results for BSSID: {}'.format(bssid))
     else:
-        print('Not 0 results')
+        print('Not 0 WLOC results')
 
     if bssid in apdict.keys():
         try:
