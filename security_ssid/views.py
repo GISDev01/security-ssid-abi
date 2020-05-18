@@ -5,11 +5,11 @@ from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import *
+
 from netaddr import EUI
 
 from location_utils import wigle_query, wloc
-
-from security_ssid.models import Client, AP, PointDB
+from security_ssid.models import AP, Client, PointDB
 
 
 def get_manuf(apdict):
@@ -124,20 +124,19 @@ def getCenter(apdict):
 
 
 def AppleWloc(request, bssid=None):
-    return HttpResponse('This is currently disabled.')
-
     if not bssid:
         print("Setting to Default BSSID")
         bssid = '00:1e:52:7a:ae:ad'
 
-    print('Got request for %s' % bssid)
+    print('Apple WLOC request for BSSID: {}'.format(bssid))
 
     if request.GET.get('ajax'):
         template = 'apple-wloc-ajax.js'
     else:
         template = 'apple-wloc.html'
         request.session['apdict'] = {}
-        request.session['apset'] = []  # reset server-side cache of unique bssids if we load page normally
+        # Reset server-side cache of unique bssids if we load page normally
+        request.session['apset'] = []
 
     bssid = bssid.lower()
     apdict = wloc.QueryBSSID(bssid)
@@ -147,7 +146,7 @@ def AppleWloc(request, bssid=None):
         if ap in request.session['apset']:
             dupes += 1
             del apdict[ap]
-        request.session['apset'].add(ap)
+        request.session['apset'].append(ap)
 
     numresults = len(apdict)
 
@@ -156,10 +155,10 @@ def AppleWloc(request, bssid=None):
     print('%s returned to browser post filter' % numresults)
 
     if numresults == 0 or (-180.0, -180.0) in apdict.values():
-        print('0 results.')
-        return HttpResponse('0 results.')
+        print('0 WLOC results.')
+        return HttpResponse('No valid WLOC results for BSSID: {}'.format(bssid))
     else:
-        print('Not 0 results')
+        print('Not 0 WLOC results')
 
     if bssid in apdict.keys():
         try:
@@ -219,8 +218,12 @@ def AppleMobile(request, cellid=None, LTE=False):
                 dupes += 1
                 del celldict[cell]
             request.session['cellset'].add(cell)
-        return render(request, template, {'bssid': cellid, 'hits': len(celldict), 'center': getCenter(celldict), \
-                                          'bssids': celldict.keys(), 'apdict': celldict, 'manufdict': celldesc,
+        return render(request, template, {'bssid': cellid,
+                                          'hits': len(celldict),
+                                          'center': getCenter(celldict),
+                                          'bssids': celldict.keys(),
+                                          'apdict': celldict,
+                                          'manufdict': celldesc,
                                           'LTE': LTE})
     else:
         return render(request, 'wigle-wloc.html', {'ssid': '', 'center': (56.97518158, 24.17274475)})
@@ -228,15 +231,22 @@ def AppleMobile(request, cellid=None, LTE=False):
 
 def locateSSID(request, ssid=None):
     if ssid:
-        apdict = wigle_query.get_location(SSID=ssid)
-        numresults = len(apdict)
-        if numresults == 0:
-            return HttpResponse('0 results.')
+        access_point_wigle_results = wigle_query.get_location(SSID=ssid)
+        num_results = len(access_point_wigle_results)
+
+        if num_results == 0:
+            return HttpResponse('0 Wigle results for SSID: {}'.format(ssid))
+
         return render(request, 'wigle-wloc.html',
-                      {'ssid': ssid, 'hits': len(apdict), 'center': getCenter(apdict), 'bssids': apdict.keys(),
-                       'apdict': apdict})
+                      {'ssid': ssid,
+                       'hits': len(access_point_wigle_results),
+                       'center': getCenter(access_point_wigle_results),
+                       'bssids': access_point_wigle_results.keys(),
+                       'apdict': access_point_wigle_results})
     else:
-        return render(request, 'wigle-wloc.html', {'ssid': '', 'center': (56.97518158, 24.17274475)})
+        return render(request, 'wigle-wloc.html',
+                      {'ssid': '',
+                       'center': (56.97518158, 24.17274475)})
 
 
 def updateSSID(request):

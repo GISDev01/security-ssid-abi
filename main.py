@@ -12,7 +12,6 @@ django.setup()
 from packet_processing import packet_processor
 from packet_processing.packet_processor import client_to_ssid_list, get_manuf, ascii_printable
 
-
 parser = argparse.ArgumentParser(description='WiFi Passive Server')
 parser.add_argument('-r', dest='pcap', action='store', help='pcap file to read')
 parser.add_argument('-i', dest='interface', action='store', default='mon0', help='interface to sniff (default mon0)')
@@ -21,10 +20,7 @@ args = parser.parse_args()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# count of scapy packets received
 total_pkt_count = 0
-
-interface = "mon0"
 
 
 def filter_and_send_packet(pkt):
@@ -33,7 +29,7 @@ def filter_and_send_packet(pkt):
 
     # Quick way to indicate that the sniffing is still continuing
     if total_pkt_count % 100000 == 0:
-        logger.info(str(datetime.now()) + ' : Total Packet Count thus far: ' + str(total_pkt_count))
+        logger.info('Total Packet Count thus far: ' + str(total_pkt_count))
 
     if pkt.haslayer(ARP):
         packet_processor.ingest_ARP_packet(pkt)

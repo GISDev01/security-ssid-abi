@@ -10,7 +10,7 @@ Components
 
 2 major components and further python modules:
 
-* main.py uses [Scapy](http://www.secdev.org/projects/scapy/) to extract data from a live capture (via airmon-ng) or pcap file, and inserts this data into 2 databases: Client Summary data is loaded into a local mysql DB (managed by Django), which is the data that is displayed in the Djanga web app.
+* main.py uses [Scapy](http://www.secdev.org/projects/scapy/) to extract data from a live capture (via airmon-ng) or pcap file, and inserts this data into 2 databases: Client Summary and Access Point summary data is loaded into a SQLite or Postgres DB (managed by Django), which is the data that is displayed in the Django web app.
 
  Beyond the summary Client Data, all 802.11 (aka Dot11) packet summaries are loaded into a second database: InfluxDB 1.8.
 
