@@ -1,10 +1,12 @@
 # Mostly taken from paper by François-Xavier Aguessy and Côme Demoustier
 # http://fxaguessy.fr/rapport-pfe-interception-ssl-analyse-donnees-localisation-smartphones/
+# Updates in 2020 based on this article: https://appelsiini.net/2017/reverse-engineering-location-services/
 
 import requests
 
 from location_utils import BSSIDApple_pb2
 from location_utils import GSM_pb2
+
 
 def padBSSID(bssid):
     result = ''
@@ -15,31 +17,26 @@ def padBSSID(bssid):
     return result.strip(':')
 
 
-def ListWifiDepuisApple(wifi_list):
-    apdict = {}
-    # kml = simplekml.Kml()
+def ListWifiGrannySmith(wifi_list):
+    access_points_from_wloc = {}
     for wifi in wifi_list.wifi:
-        # print "Wifi BSSID : ", wifi.bssid
         if wifi.HasField('location'):
             lat = wifi.location.latitude * pow(10, -8)
             lon = wifi.location.longitude * pow(10, -8)
-            # kml.newpoint(name=wifi.bssid, coords=[(lon,lat)])
             mac = padBSSID(wifi.bssid)
-            apdict[mac] = (lat, lon)
-        if wifi_list.HasField('valeur_inconnue1'):
-            print('Inconnu1 : ', '%X' % wifi_list.valeur_inconnue1)
-        if wifi_list.HasField('valeur_inconnue2'):
-            print('Inconnu2 : ', '%X' % wifi_list.valeur_inconnue1)
-        if wifi_list.HasField('APIName'):
-            print('APIName : ', wifi_list.APIName)
-            # kml.save("test.kml")
-    return apdict
+            access_points_from_wloc[mac] = (lat, lon)
+
+    return access_points_from_wloc
 
 
 def ProcessMobileResponse(cell_list):
-    operators = {1: 'Telstra', 2: 'Optus', 3: 'Vodafone', 6: 'Three'}
+    operators = {1: 'Telstra',
+                 2: 'Optus',
+                 3: 'Vodafone',
+                 6: 'Three'}
     celldict = {}
     celldesc = {}
+
     # kml = simplekml.Kml()
     for cell in cell_list.cell:
         if cell.HasField('location') and cell.CID != -1:  # exclude "LAC" type results (usually 20 in each response)
@@ -74,43 +71,51 @@ def ProcessMobileResponse(cell_list):
     return (celldict, celldesc)
 
 
-def QueryBSSID(query, more_results=True):
-    liste_wifi = BSSIDApple_pb2.BlockBSSIDApple()
-    if type(query) == str:
-        bssid_list = [query]
-    elif type(query) == list:
-        bssid_list = query
+def QueryBSSID(bssid_list):
+    bssid_wifi_list_pbuf = BSSIDApple_pb2.BlockBSSIDApple()
+
+    if type(bssid_list) == str:
+        bssid_list = [bssid_list]
+    elif type(bssid_list) == list:
+        bssid_list = bssid_list
     else:
         raise TypeError('Provide 1 BSSID as string or multiple BSSIDs as list of strings')
-    for bssid in bssid_list:
-        wifi = liste_wifi.wifi.add()
-        wifi.bssid = bssid
-    liste_wifi.valeur_inconnue1 = 0
-    if more_results:
-        liste_wifi.valeur_inconnue2 = 0  # last byte in request == 0 means return ~400 results, 1 means only return results for BSSIDs queried
-    else:
-        liste_wifi.valeur_inconnue2 = 1
 
-    # chaine_liste_wifi = liste_wifi.SerializeToString()
-    #
-    # longueur_chaine_liste_wifi = len(chaine_liste_wifi)
-    #
-    # headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': '*/*', "Accept-Charset": "utf-8",
-    #            "Accept-Encoding": "gzip, deflate", \
-    #            "Accept-Language": "en-us", 'User-Agent': 'locationd/1753.17 CFNetwork/711.1.12 Darwin/14.0.0'}
-    #
-    # data = "\x00\x01\x00\x05" + "en_US" + "\x00\x13" + \
-    #        "com.apple.locationd" + "\x00\x0a" + "8.1.12B411" + \
-    #        "\x00\x00\x00\x01\x00\x00\x00" + str(longueur_chaine_liste_wifi) + \
-    #        str(chaine_liste_wifi)
-    #
-    # r = requests.post('https://gs-loc.apple.com/clls/wloc', headers=headers, data=data,
-    #                   verify=False)  # CN of cert on this hostname is sometimes *.ls.apple.com / ls.apple.com, so have to disable SSL verify
-    # liste_wifi = BSSIDApple_pb2.BlockBSSIDApple()
-    #
-    # liste_wifi.ParseFromString(r.content[10:])
-    # return ListWifiDepuisApple(liste_wifi)
-    return {}
+    for bssid in bssid_list:
+        wifi = bssid_wifi_list_pbuf.wifi.add()
+        wifi.bssid = bssid
+
+    wifi_list_string = bssid_wifi_list_pbuf.SerializeToString()
+    wifi_list_string_length = len(wifi_list_string)
+
+    wloc_headers = {'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': '*/*',
+                    "Accept-Charset": "utf-8",
+                    "Accept-Encoding": "gzip, deflate",
+                    "Accept-Language": "en-us",
+                    'User-Agent': 'locationd (6.9) CFNetwork/548.1.4 Darwin/14.0.0'}
+
+    binary_header = "\x00\x01\x00\x05" + \
+                    "en_US" + \
+                    "\x00\x00\x00\x09" + \
+                    "5.1.9B177" + \
+                    "\x00\x00\x00\x01\x00\x00\x00"
+
+    data_bytes_wloc = binary_header.encode() + \
+                      chr(wifi_list_string_length).encode() + \
+                      wifi_list_string
+
+    # Format of request: [header][size][message] in 'data'
+    # CN of cert on this hostname is sometimes *.ls.apple.com / ls.apple.com, so have to disable SSL verify
+    wloc_req = requests.post('https://gs-loc.apple.com/clls/wloc',
+                             headers=wloc_headers,
+                             data=data_bytes_wloc,
+                             verify=False)
+
+    bssid_wifi_list_pbuf = BSSIDApple_pb2.BlockBSSIDApple()
+    bssid_wifi_list_pbuf.ParseFromString(wloc_req.content[10:])
+
+    return ListWifiGrannySmith(bssid_wifi_list_pbuf)
 
 
 def QueryMobile(cellid, LTE=False):
@@ -163,3 +168,5 @@ def QueryMobile(cellid, LTE=False):
     # print 'Wrote %s' % (cellid+'.bin')
 
     return ProcessMobileResponse(response)
+
+# res = QueryBSSID('b4:5d:50:8f:27:c1')
