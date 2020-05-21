@@ -242,11 +242,12 @@ def update_summary_database(client_mac=None, pkt_time=None, SSID='', BSSID=''):
 
 
 def send_client_data_to_influxdb(client_mac_addr, pkt_time, client_sig_rssi, probed_ssid_name):
-    influx_formatted_data = influx.assemble_json(measurement=settings.INFLUX_DB_MEASUREMENT_NAME,
-                                                 pkt_timestamp=pkt_time,
-                                                 rssi_value=client_sig_rssi,
-                                                 client_mac_addr=client_mac_addr,
-                                                 probed_ssid=probed_ssid_name)
-    influx.write_data(influx_formatted_data)
+    if settings.USE_INFLUXDB:
+        influx_formatted_data = influx.assemble_json(measurement=settings.INFLUX_DB_MEASUREMENT_NAME,
+                                                     pkt_timestamp=pkt_time,
+                                                     rssi_value=client_sig_rssi,
+                                                     client_mac_addr=client_mac_addr,
+                                                     probed_ssid=probed_ssid_name)
+        influx.write_data(influx_formatted_data)
 
-    logger.debug('{} Client data sent to influxdb'.format(client_mac_addr))
+        logger.debug('{} Client data sent to influxdb'.format(client_mac_addr))
