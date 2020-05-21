@@ -6,6 +6,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Not used for local sqlite DB, but is used for remote Postgres connection
 DJANGO_DB_HOST = '10.0.0.2'
 
+
+USE_INFLUXDB = False
 INFLUX_HOST = '10.0.0.2'
 INFLUX_PORT = '8086'
 INFLUX_USER = ''
@@ -14,8 +16,11 @@ INFLUX_DB = 'securityssid'
 INFLUX_TIMEOUT_SEC = 5.0
 INFLUX_DB_MEASUREMENT_NAME = 'clientdevices'
 
-wigle_username = ''
-wigle_password = ''
+# Wigle API info: https://wigle.net/account
+# API Name
+wigle_username = 'AIDf41242c6fb7b4e9df0e6e23de64cf8b5'
+# API Token
+wigle_password = 'a811402cc9fdfd30facac8c4997f654e'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
@@ -78,20 +83,20 @@ WSGI_APPLICATION = 'security_ssid.wsgi.application'
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
     # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     # postgres exists by default, if you change this to a real DB name, the DB will
-    #     # need to be created manually
-    #     'NAME': 'postgres',
-    #     'USER': 'postgres',
-    #     'PASSWORD': 'postgres',
-    #     'HOST': DJANGO_DB_HOST,
-    #     'PORT': '5432',
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     # }
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        # postgres exists by default, if you change this to a real DB name, the DB will
+        # need to be created manually
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': DJANGO_DB_HOST,
+        'PORT': '5432',
+    }
 }
 
 # Password validation
