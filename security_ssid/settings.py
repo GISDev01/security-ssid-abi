@@ -18,9 +18,9 @@ INFLUX_DB_MEASUREMENT_NAME = 'clientdevices'
 
 # Wigle API info: https://wigle.net/account
 # API Name
-wigle_username = 'AIDf41242c6fb7b4e9df0e6e23de64cf8b5'
+wigle_username = 'zzz'
 # API Token
-wigle_password = 'a811402cc9fdfd30facac8c4997f654e'
+wigle_password = 'aaa'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
