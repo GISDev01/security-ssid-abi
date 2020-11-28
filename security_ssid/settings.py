@@ -4,9 +4,10 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Not used for local sqlite DB, but is used for remote Postgres connection
-DJANGO_DB_HOST = '10.0.0.2'
+DJANGO_DB_HOST = '10.0.0.13'
 
-INFLUX_HOST = '10.0.0.2'
+USE_INFLUX_DB = False
+INFLUX_HOST = '10.0.0.13'
 INFLUX_PORT = '8086'
 INFLUX_USER = ''
 INFLUX_PASSWORD = ''
@@ -26,7 +27,7 @@ SECRET_KEY = 'CHANGETHISFORPROD!'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', '10.0.0.27']
+ALLOWED_HOSTS = ['*']
 
 # Python dotted path to the WSGI application used by Django's runserver.
 WSGI_APPLICATION = 'security_ssid.wsgi.application'
