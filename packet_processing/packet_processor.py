@@ -7,12 +7,16 @@ from scapy.all import *
 from scapy.layers.dot11 import Dot11, Dot11Elt
 from scapy.layers.l2 import ARP, Ether
 
-from db import influx
 from mac_parser import manuf
 from security_ssid import settings
 from security_ssid.models import AP, Client
 
 logger = logging.getLogger(__name__)
+
+if settings.USE_INFLUX_DB:
+    from db import influx
+else:
+    logger.warning("Skipping InfluxDB data functionality.")
 
 client_to_ssid_list = defaultdict(list)
 mac_parser_ws = manuf.MacParser()
