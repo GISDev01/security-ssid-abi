@@ -29,31 +29,27 @@ This includes views of:
 ------------
 Install Anaconda 3 for Linux: https://www.anaconda.com/products/individual#linux
 
-`sudo apt install aircrack-ng -y && sudo apt install git -y && sudo apt install libpq-dev`
-
-`conda create --name securityssidabi37 python=3.7`
-
-`git clone https://github.com/GISDev01/security-ssid-abi.git`
-
-`cd security-ssid-abi`
-
-`source activate securityssidabi37`
-
-1. Install or update required Python modules by running
-
-`pip install -r requirements.txt`
-
-2. Initialize an empty database (for Django) by running
 ```
-python manage.py migrate --run-syncdb
-./manage.py createsuperuser` (Create creds to log in to the /admin Web GUI endpoint)
+sudo apt install aircrack-ng -y && sudo apt install git -y && sudo apt install libpq-dev
+# We can only run the sniffer as root, because it opens a raw socket (via scapy sniff)
+sudo -i
+conda create --name securityssidabi37 python=3.7
+git clone https://github.com/GISDev01/security-ssid-abi.git
+cd security-ssid-abi
+source activate securityssidabi37
+pip install -r requirements.txt
+
+# Initialize the initial Django DB
+./manage.py migrate --run-syncdb 
+./manage.py createsuperuser
+# Create creds to log in to the /admin Web GUI endpoint)
+
+# Start the web interface by running 
+# (change 127.0.0.1 to any IP for the Django web server to listen on)
+./manage.py runserver 127.0.0.1:8000
 ```
 
-3. Start the web interface by running (change 127.0.0.1 to any IP for the Django web server to listen on)
-
-`./manage.py runserver 127.0.0.1:8000`
-
-* To sniff traffic (it is possible to use a static .pcap file or to use a live monitoring interface)
+# To sniff traffic
 
 Bring up a wifi interface in monitor mode (usually mon0) so that airodump-ng shows traffic.
 
@@ -64,11 +60,14 @@ Note: check what the connected wireless NIC device is named using iwconfig
 `iwconfig`
 
 Make sure the USB wireless NIC, such as an Alfa AWUS036 is passed-through to the VM
-Example value is: wlx00c022ca923213tta (or it could be something like wlan0)
+Example value is: wlx00c0ca4f55b9 (or it could be something like wlan0)
 
-`sudo airmon-ng start wlx00c022ca923213tta`
+`sudo airmon-ng start wlx00c0ca4f55b9`
 
-4. Get InfluxDB up and running, and update the .\security_ssid\settings.py with the correct IP or hostname of the InfluxDB box.
+- Sometimes the OS and Wireless card like to act up and display a message like: "SIOCSIFFLAGS: Operation not possible due to RF-kill". In that case, this can help:
+`sudo rfkill unblock wifi; sudo rfkill unblock all`
+
+4. Optional (set to false by default in setting.py). Get InfluxDB up and running, and update the .\security_ssid\settings.py with the correct IP or hostname of the InfluxDB box.
 
 Note: Fastest way to get it up and running for development is with Docker:
 
@@ -93,16 +92,17 @@ Then you can run with (assuming sample-data.cap is in the root of this repo):
 `./run.sh -r sample-data.cap`
 
 To run Postgres in Docker for testing, as an alternative to sqlite
-`docker run -d -p 5432:5432 --name postgres95 -e POSTGRES_PASSWORD=postgres postgres:9.5`
-If needed, get in to the box with:   `docker exec -it postgres95 bash`
+```
+docker run -d -p 5432:5432 --name postgres95 -e POSTGRES_PASSWORD=postgres postgres:9.5
+```
+If needed, get in to the box with:
+
+`docker exec -it postgres95 bash`
 
 `psql -U postgres`
 
 
-------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------
 Dependencies
-------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------
 See requirements.txt for python modules and versions required.
 Externally, this application writes out to an InfluxDB data store (in addition to the Django DB).
@@ -111,8 +111,6 @@ This repo has been recently developed on a Ubuntu 16.04 (64-bit) VM with Python 
 
 Network sniffing via airmon-ng has been tested on a Ubuntu 16.04 VM and Raspian (RasPi 3).
 
-------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------
 Credits
 ------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------
