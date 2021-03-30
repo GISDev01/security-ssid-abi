@@ -8,7 +8,7 @@ chardet==3.0.4
 cryptography==3.2
 cycler==0.10.0
 decorator==4.4.2
-Django==3.0.7
+Django==3.0.12
 django-picklefield==2.1.1
 dnslib==0.9.12
 google==2.0.3
