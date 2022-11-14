@@ -10,7 +10,7 @@ cycler==0.10.0
 decorator==4.4.2
 Django==3.1.14
 django-picklefield==2.1.1
-dnslib==0.9.12
+dnslib==0.9.17
 google==2.0.3
 idna==2.9
 influxdb==5.3.0
