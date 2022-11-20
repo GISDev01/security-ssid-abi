@@ -30,14 +30,10 @@ This includes views of:
 Install Anaconda 3 for Linux: https://www.anaconda.com/products/individual#linux
 
 ```
-sudo apt install aircrack-ng -y && sudo apt install git -y && sudo apt install libpq-dev
-# We can only run the sniffer as root, because it opens a raw socket (via scapy sniff)
-sudo -i
-conda create --name securityssidabi37 python=3.7
-git clone https://github.com/GISDev01/security-ssid-abi.git
+git clone git@github.com:GISDev01/security-ssid-abi.git
 cd security-ssid-abi
-source activate securityssidabi37
-pip install -r requirements.txt
+conda env create -f environment.yml
+source activate securityssidabi38
 
 # Initialize the initial Django DB
 ./manage.py migrate --run-syncdb 
@@ -47,9 +43,15 @@ pip install -r requirements.txt
 # Start the web interface by running 
 # (change 127.0.0.1 to any IP for the Django web server to listen on)
 ./manage.py runserver 127.0.0.1:8000
+
 ```
 
 # To sniff traffic
+```
+sudo apt install aircrack-ng -y && sudo apt install git -y && sudo apt install libpq-dev
+# We can only run the sniffer as root, because it opens a raw socket (via scapy sniff)
+sudo -i
+```
 
 Bring up a wifi interface in monitor mode (usually mon0) so that airodump-ng shows traffic.
 
@@ -105,9 +107,10 @@ If needed, get in to the box with:
 Dependencies
 ------------------------------------------------------------------------------------------------------------
 See requirements.txt for python modules and versions required.
-Externally, this application writes out to an InfluxDB data store (in addition to the Django DB).
+Externally, this application writes out to an InfluxDB data store (in addition to the local Django DB (sqlite)).
 
-This repo has been recently developed on a Ubuntu 16.04 (64-bit) VM with Python 3.7, Django 3.x and Scapy 2.4.x. The web interface code has been updated and tested with Django running on Mac OS X Sierra with Python 3.7.x.
+This repo has been recently developed on a Ubuntu 16.04 (64-bit) VM with Python 3.8, Django 4.x and Scapy 2.4.x. 
+The web interface code has been updated and tested with Django running on Mac OS X Sierra with Python 3.8.
 
 Network sniffing via airmon-ng has been tested on a Ubuntu 16.04 VM and Raspian (RasPi 3).
 
@@ -124,3 +127,23 @@ Includes Bluff JS chart library by James Coglan.
 [paper]: http://fxaguessy.fr/rapport-pfe-interception-ssl-analyse-donnees-localisation-smartphones/
 
 (gisdev01) Starting in mid-2017 and then again in 2020, several updates and upgrades have been completed, including addition of InfluxDB functionality, summary functionality, Raspberry Pi support, and several front-end updates.
+
+
+
+```
+conda install Django
+conda install matplotlib
+conda install -c conda-forge influxdb
+conda install -c conda-forge netaddr
+conda install -c conda-forge google-api-core
+
+# Not available in any conda channels
+pip install django-picklefield
+
+conda env export > environment.yml
+conda env create -f environment.yml
+
+
+
+
+```
