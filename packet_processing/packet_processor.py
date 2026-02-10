@@ -4,7 +4,7 @@ from django.core.exceptions import *
 from dnslib import DNSRecord
 from netaddr import EUI
 from scapy.all import *
-from scapy.layers.dot11 import Dot11, Dot11Elt
+from scapy.layers.dot11 import Dot11, Dot11Elt, RadioTap
 from scapy.layers.l2 import ARP, Ether
 
 from mac_parser import manuf
@@ -39,6 +39,7 @@ def ingest_dot11_probe_req_packet(dot11_probe_pkt):
         probed_ssid = remove_null_char_for_postgres(probed_ssid)
 
         if len(probed_ssid) > 0 and probed_ssid not in client_to_ssid_list[client_mac]:
+            logger.debug("Adding new Probed SSID to Summary DB: {}".format(probed_ssid))
             client_to_ssid_list[client_mac].append(probed_ssid)
             update_summary_database(client_mac=client_mac, pkt_time=dot11_probe_pkt.time, SSID=probed_ssid)
 
@@ -62,26 +63,17 @@ def ingest_dot11_probe_req_packet(dot11_probe_pkt):
 
 
 def try_to_parse_rssi_from_packet(dot11_probe_pkt):
-    if "notdecoded" in dot11_probe_pkt:
-        if dot11_probe_pkt.notdecoded is not None:
-            # The location of the RSSI strength is dependent on the physical NIC
-            # Alfa AWUS 036N
-            # client_signal_strength = -(256 - ord(probe_pkt.notdecoded[-4:-3]))
-            logger.debug("Getting Signal Strength")
-            logger.debug(dot11_probe_pkt.notdecoded)
-            # Alfa AWUS 036NHA (Atheros AR9271)
-            client_signal_strength = -(256 - ord(dot11_probe_pkt.notdecoded[-2:-1]))
-
-        else:
-            client_signal_strength = -100
-            logger.debug("No client signal strength found in 'notdecoded' segment")
+    client_signal_strength = 0
+    if dot11_probe_pkt.haslayer(RadioTap) and dot11_probe_pkt.haslayer(Dot11):
+        # Check for Probe Request frames (type=0, subtype=4)
+        if dot11_probe_pkt.type == 0 and dot11_probe_pkt.subtype == 4:
+            # Get the RSSI value from the RadioTap header
+            client_signal_strength = dot11_probe_pkt[RadioTap].dBm_AntSignal
 
     else:
-        client_signal_strength = -100
-        logger.debug("NOTDECODED missing from packet, so no strength found")
+        logger.warning("Signal Strength missing from packet")
 
     return client_signal_strength
-
 
 def ingest_ARP_packet(arp_pkt):
     logger.debug('ARP packet detected.')
